@@ -1,0 +1,1 @@
+g && rsync dist/ --delete -r johanrox@demo.spraakdata.gu.se:/home/johanrox/htdocs/geokorp
