@@ -2,19 +2,23 @@
 c = console
 ###*
  # @ngdoc overview
- # @name leafletApp
+ # @name geokorpApp
  # @description
- # # leafletApp
+ # # geokorpApp
  #
  # Main module of the application.
 ###
 
 yearToCity = {}
+first = 1611
+last = 2015
 
 getSeriesData = (data) ->
     delete data[""]
     # TODO: getTimeInterval should take the corpora of this parent tab instead of the global ones.
     # [first, last] = settings.corpusListing.getTimeInterval()
+
+
 
     parseDate = (granularity, time) ->
         [year,month,day] = [null,0,1]
@@ -64,8 +68,7 @@ getSeriesData = (data) ->
 
         return [].concat data, newMoments
 
-    first = 1611
-    last = 2015
+    
 
     firstVal = parseDate "y", first
     lastVal = parseDate "y", last.toString()
@@ -97,7 +100,7 @@ getSeriesData = (data) ->
 
 
 angular
-  .module 'leafletApp', [
+  .module 'geokorpApp', [
     'ngAnimate',
     'ngSanitize'
     "leaflet-directive"
@@ -210,10 +213,11 @@ angular
 
 
 
-    
+    timer = null
     s.startTimer = () ->
-        setInterval(() ->
+        timer = setInterval(() ->
             s.$apply () ->
+                if s.year > last then clearInterval(timer)
                 s.year++
                 s.setYear(s.year)
         , 400)
@@ -222,8 +226,7 @@ angular
     s.setYear = (year) ->
         s.markers = {}
         c.log "year", year, yearToCity[year]
-        for item in yearToCity[year]
-            {val, name, lat, lng} = item
+        for {val, name, lat, lng} in (yearToCity[year] or [])
             c.log "val, name, lat, lng", val, name, lat, lng
             s.markers[name] = 
                 icon : icon

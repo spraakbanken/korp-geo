@@ -7,10 +7,10 @@
  # # MainCtrl
  # Controller of the leafletApp
 ###
-angular.module 'leafletApp'
-  .controller 'MainCtrl', ($scope) ->
-    $scope.awesomeThings = [
-      'HTML5 Boilerplate'
-      'AngularJS'
-      'Karma'
-    ]
+# angular.module 'leafletApp'
+#   .controller 'MainCtrl', ($scope) ->
+#     $scope.awesomeThings = [
+#       'HTML5 Boilerplate'
+#       'AngularJS'
+#       'Karma'
+#     ]
