@@ -146,12 +146,12 @@ angular
         for name in names
             if name.toLowerCase() of placeResponse.data
                 usedNames.push name
-                # [lat, lng] = placeResponse.data[name.toLowerCase()]
-                # s.markers[name] = 
-                #     icon : icon
-                #     lat : lat
-                #     lng : lng
-                #     message : name
+                [lat, lng] = placeResponse.data[name.toLowerCase()]
+                s.markers[name] = 
+                    icon : icon
+                    lat : lat
+                    lng : lng
+                    message : name
 
         c.log "all names", usedNames.length
 
