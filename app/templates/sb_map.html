@@ -1,0 +1,16 @@
+<div ng-style="{visibility: show_map ? 'visible' : 'hidden'}" class="map">
+    <leaflet center="center" markers="markers | sbDateFilter:date:filterEnabled" height="520px"></leaflet>
+
+    <!--<div ng-show="showTime">
+        <input type="checkbox" ng-model="filterEnabled"></input>
+        <input type="date" ng-model="date"></input>
+        <div ng-bind="date | date:'MM/dd/yyyy'"></div>
+        <div>Filter {{filterEnabled}}</div>
+        <div ng-repeat="m in markers | sbDateFilter:date:filterEnabled">{{m}}</div>
+    </div>-->
+
+</div>
+
+<div>
+    <!-- TODO add box for marker info box to appear --> 
+</div>

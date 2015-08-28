@@ -1,4 +1,3 @@
-// Generated on 2015-06-23 using generator-angular 0.11.1
 'use strict';
 
 // # Globbing
@@ -9,10 +8,8 @@
 
 module.exports = function (grunt) {
 
-  // Load grunt tasks automatically
   require('load-grunt-tasks')(grunt);
 
-  // Time how long tasks take. Can help when optimizing build times
   require('time-grunt')(grunt);
 
   // Configurable paths for the application
@@ -25,7 +22,7 @@ module.exports = function (grunt) {
   grunt.initConfig({
 
     // Project settings
-    yeoman: appConfig,
+    geokorp: appConfig,
 
     // Watches files for changes and runs tasks based on the changed files
     watch: {
@@ -34,7 +31,7 @@ module.exports = function (grunt) {
         tasks: ['wiredep']
       },
       coffee: {
-        files: ['<%= yeoman.app %>/scripts/{,*/}*.{coffee,litcoffee,coffee.md}'],
+        files: ['<%= geokorp.app %>/scripts/{,*/}*.{coffee,litcoffee,coffee.md}'],
         tasks: ['newer:coffee:dist']
       },
       coffeeTest: {
@@ -42,22 +39,11 @@ module.exports = function (grunt) {
         tasks: ['newer:coffee:test', 'karma']
       },
       compass: {
-        files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+        files: ['<%= geokorp.app %>/styles/{,*/}*.{scss,sass}'],
         tasks: ['compass:server', 'autoprefixer']
       },
       gruntfile: {
         files: ['Gruntfile.js']
-      },
-      livereload: {
-        options: {
-          livereload: '<%= connect.options.livereload %>'
-        },
-        files: [
-          '<%= yeoman.app %>/{,*/}*.html',
-          '.tmp/styles/{,*/}*.css',
-          '.tmp/scripts/{,*/}*.js',
-          '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
-        ]
       }
     },
 
@@ -66,27 +52,7 @@ module.exports = function (grunt) {
       options: {
         port: 9000,
         // Change this to '0.0.0.0' to access the server from outside.
-        hostname: 'localhost',
-        livereload: 35729
-      },
-      livereload: {
-        options: {
-          // open: true,
-          middleware: function (connect) {
-            return [
-              connect.static('.tmp'),
-              connect().use(
-                '/bower_components',
-                connect.static('./bower_components')
-              ),
-              connect().use(
-                '/app/styles',
-                connect.static('./app/styles')
-              ),
-              connect.static(appConfig.app)
-            ];
-          }
-        }
+        hostname: 'localhost'
       },
       test: {
         options: {
@@ -103,25 +69,6 @@ module.exports = function (grunt) {
             ];
           }
         }
-      },
-      dist: {
-        options: {
-          open: true,
-          base: '<%= yeoman.dist %>'
-        }
-      }
-    },
-
-    // Make sure code styles are up to par and there are no obvious mistakes
-    jshint: {
-      options: {
-        jshintrc: '.jshintrc',
-        reporter: require('jshint-stylish')
-      },
-      all: {
-        src: [
-          'Gruntfile.js'
-        ]
       }
     },
 
@@ -132,8 +79,7 @@ module.exports = function (grunt) {
           dot: true,
           src: [
             '.tmp',
-            '<%= yeoman.dist %>/{,*/}*',
-            '!<%= yeoman.dist %>/.git{,*/}*'
+            '<%= geokorp.dist %>'
           ]
         }]
       },
@@ -168,10 +114,6 @@ module.exports = function (grunt) {
 
     // Automatically inject Bower components into the app
     wiredep: {
-      app: {
-        src: ['<%= yeoman.app %>/index.html'],
-        ignorePath:  /\.\.\//
-      },
       test: {
         devDependencies: true,
         src: '<%= karma.unit.configFile %>',
@@ -191,7 +133,7 @@ module.exports = function (grunt) {
           }
       },
       sass: {
-        src: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+        src: ['<%= geokorp.app %>/styles/{,*/}*.{scss,sass}'],
         ignorePath: /(\.\.\/){1,2}bower_components\//
       }
     },
@@ -205,7 +147,7 @@ module.exports = function (grunt) {
       dist: {
         files: [{
           expand: true,
-          cwd: '<%= yeoman.app %>/scripts',
+          cwd: '<%= geokorp.app %>/scripts',
           src: '{,*/}*.coffee',
           dest: '.tmp/scripts',
           ext: '.js'
@@ -225,12 +167,12 @@ module.exports = function (grunt) {
     // Compiles Sass to CSS and generates necessary files if requested
     compass: {
       options: {
-        sassDir: '<%= yeoman.app %>/styles',
+        sassDir: '<%= geokorp.app %>/styles',
         cssDir: '.tmp/styles',
         generatedImagesDir: '.tmp/images/generated',
-        imagesDir: '<%= yeoman.app %>/images',
-        javascriptsDir: '<%= yeoman.app %>/scripts',
-        fontsDir: '<%= yeoman.app %>/styles/fonts',
+        imagesDir: '<%= geokorp.app %>/images',
+        javascriptsDir: '<%= geokorp.app %>/scripts',
+        fontsDir: '<%= geokorp.app %>/styles/fonts',
         importPath: './bower_components',
         httpImagesPath: '/images',
         httpGeneratedImagesPath: '/images/generated',
@@ -241,7 +183,7 @@ module.exports = function (grunt) {
       },
       dist: {
         options: {
-          generatedImagesDir: '<%= yeoman.dist %>/images/generated'
+          generatedImagesDir: '<%= geokorp.dist %>/images/generated'
         }
       },
       server: {
@@ -251,168 +193,33 @@ module.exports = function (grunt) {
       }
     },
 
-    // Renames files for browser caching purposes
-    filerev: {
-      dist: {
-        src: [
-          '<%= yeoman.dist %>/scripts/{,*/}*.js',
-          '<%= yeoman.dist %>/styles/{,*/}*.css',
-          '<%= yeoman.dist %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
-          '<%= yeoman.dist %>/styles/fonts/*'
-        ]
-      }
-    },
-
-    // Reads HTML for usemin blocks to enable smart builds that automatically
-    // concat, minify and revision files. Creates configurations in memory so
-    // additional tasks can operate on them
-    useminPrepare: {
-      html: '<%= yeoman.app %>/index.html',
-      options: {
-        dest: '<%= yeoman.dist %>',
-        flow: {
-          html: {
-            steps: {
-              js: ['concat', 'uglifyjs'],
-              css: ['cssmin']
-            },
-            post: {}
-          }
-        }
-      }
-    },
-
-    // Performs rewrites based on filerev and the useminPrepare configuration
-    usemin: {
-      html: ['<%= yeoman.dist %>/{,*/}*.html'],
-      css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
-      options: {
-        assetsDirs: [
-          '<%= yeoman.dist %>',
-          '<%= yeoman.dist %>/images',
-          '<%= yeoman.dist %>/styles'
-        ]
-      }
-    },
-
-    // The following *-min tasks will produce minified files in the dist folder
-    // By default, your `index.html`'s <!-- Usemin block --> will take care of
-    // minification. These next options are pre-configured if you do not wish
-    // to use the Usemin blocks.
-    // cssmin: {
-    //   dist: {
-    //     files: {
-    //       '<%= yeoman.dist %>/styles/main.css': [
-    //         '.tmp/styles/{,*/}*.css'
-    //       ]
-    //     }
-    //   }
-    // },
-    // uglify: {
-    //   dist: {
-    //     files: {
-    //       '<%= yeoman.dist %>/scripts/scripts.js': [
-    //         '<%= yeoman.dist %>/scripts/scripts.js'
-    //       ]
-    //     }
-    //   }
-    // },
-    // concat: {
-    //   dist: {}
-    // },
-
-    imagemin: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.app %>/images',
-          src: '{,*/}*.{png,jpg,jpeg,gif}',
-          dest: '<%= yeoman.dist %>/images'
-        }]
-      }
-    },
-
-    svgmin: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.app %>/images',
-          src: '{,*/}*.svg',
-          dest: '<%= yeoman.dist %>/images'
-        }]
-      }
-    },
-
-    htmlmin: {
-      dist: {
-        options: {
-          collapseWhitespace: true,
-          conservativeCollapse: true,
-          collapseBooleanAttributes: true,
-          removeCommentsFromCDATA: true,
-          removeOptionalTags: true
-        },
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.dist %>',
-          src: ['*.html', 'views/{,*/}*.html'],
-          dest: '<%= yeoman.dist %>'
-        }]
-      }
-    },
-
-    // ng-annotate tries to make the code safe for minification automatically
-    // by using the Angular long form for dependency injection.
-    ngAnnotate: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '.tmp/concat/scripts',
-          src: '*.js',
-          dest: '.tmp/concat/scripts'
-        }]
-      }
-    },
-
-    // Replace Google CDN references
-    cdnify: {
-      dist: {
-        html: ['<%= yeoman.dist %>/*.html']
-      }
-    },
-
     // Copies remaining files to places other tasks can use
     copy: {
       dist: {
         files: [{
           expand: true,
           dot: true,
-          cwd: '<%= yeoman.app %>',
-          dest: '<%= yeoman.dist %>',
+          cwd: '<%= geokorp.app %>',
+          dest: '<%= geokorp.dist %>',
           src: [
-            '*.{ico,png,txt}',
-            '.htaccess',
-            '*.html',
-            'views/{,*/}*.html',
-            'images/{,*/}*.{webp}',
-            'styles/fonts/{,*/}*.*',
+            'templates/{,*/}*.*',
             'data/places.json'
           ]
         }, {
           expand: true,
           cwd: '.tmp/images',
-          dest: '<%= yeoman.dist %>/images',
+          dest: '<%= geokorp.dist %>/images',
           src: ['generated/*']
         }, {
           expand: true,
           cwd: '.',
           src: 'bower_components/bootstrap-sass-official/assets/fonts/bootstrap/*',
-          dest: '<%= yeoman.dist %>'
+          dest: '<%= geokorp.dist %>'
         }]
       },
       styles: {
         expand: true,
-        cwd: '<%= yeoman.app %>/styles',
+        cwd: '<%= geokorp.app %>/styles',
         dest: '.tmp/styles/',
         src: '{,*/}*.css'
       }
@@ -430,10 +237,42 @@ module.exports = function (grunt) {
       ],
       dist: [
         'coffee',
-        'compass:dist',
-        'imagemin',
-        'svgmin'
+        'compass:dist'
       ]
+    },
+    ngmin: {
+      dist: {
+        files: [{
+          expand: true,
+          cwd: '.tmp/concat/scripts',
+          src: 'scripts.js',
+          dest: '.tmp/concat/scripts'
+        }]
+      }
+    },
+    cssmin: {
+      dist: {
+        files: [{
+          expand: true,
+          cwd: '.tmp/styles',
+          src: ['*.css', '!*.min.css'],
+          dest: 'dist/styles',
+          ext: '.min.css'
+        }]
+      }
+    },
+    concat: {
+      dist: {
+        src: ['.tmp/scripts/*.js'],
+        dest: '.tmp/geokorp.js',
+      },
+    },
+    uglify: {
+      dist: {
+        files: {
+          'dist/scripts/geokorp.min.js': ['.tmp/geokorp.js']
+        }
+      }
     },
 
     // Test settings
@@ -443,27 +282,6 @@ module.exports = function (grunt) {
         singleRun: true
       }
     }
-  });
-
-
-  grunt.registerTask('serve', 'Compile then start a connect web server', function (target) {
-    if (target === 'dist') {
-      return grunt.task.run(['build', 'connect:dist:keepalive']);
-    }
-
-    grunt.task.run([
-      'clean:server',
-      'wiredep',
-      'concurrent:server',
-      'autoprefixer:server',
-      'connect:livereload',
-      'watch'
-    ]);
-  });
-
-  grunt.registerTask('server', 'DEPRECATED TASK. Use the "serve" task instead', function (target) {
-    grunt.log.warn('The `server` task has been deprecated. Use `grunt serve` to start a server.');
-    grunt.task.run(['serve:' + target]);
   });
 
   grunt.registerTask('test', [
@@ -477,24 +295,19 @@ module.exports = function (grunt) {
 
   grunt.registerTask('build', [
     'clean:dist',
-    'wiredep',
-    'useminPrepare',
     'concurrent:dist',
     'autoprefixer',
     'concat',
-    'ngAnnotate',
+    'ngmin',
     'copy:dist',
-    'cdnify',
     'cssmin',
     'uglify',
-    'filerev',
-    'usemin',
-    'htmlmin'
+    'clean:server',
   ]);
 
   grunt.registerTask('default', [
-    'newer:jshint',
-    // 'test',
+    // no tests available yet
+    //'test',
     'build'
   ]);
 };
