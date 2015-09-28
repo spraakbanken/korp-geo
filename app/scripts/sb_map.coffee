@@ -247,13 +247,40 @@ angular.module 'sbMap', [
           if marker.date == date
             out[key] = marker
       out
-  .directive  'sbMap', ['leafletData', (leafletData) ->
+  .directive  'sbMap', ['$compile', '$timeout', 'leafletData', 'leafletEvents', ($compile, $timeout, leafletData, leafletEvents) ->
     link = (scope, element, attrs) ->
-      scope.$watch 'markers', () ->
+      scope.$watch 'markers', (markers) ->
+          # for own key, value of markers
+          #     do (key, value) ->
+          #         msgScope = value.getMessageScope()
+          #         c.log "## events adding listener on ", msgScope.$id
+          #         msgScope.$on('leafletDirectiveMarker.mouseover', (event) ->
+          #             c.log "#### events", event              
+          #         )
+          
           # TODO 
           # 1. Remove the old markers from the map
           # 2. Iterate the new markers and generate proper marker objects
           # 3. Give the markers to the leaftlet object  
+          
+      scope.$on('leafletDirectiveMarker.mouseover', (event, marker) ->
+          
+          index = marker.modelName
+          msgScope = scope.markers[index].getMessageScope()
+          
+          $timeout (() ->
+               scope.$apply () ->            
+                  compiled = $compile scope.hoverTemplate
+                  content = compiled msgScope
+                  angular.element('#hoverInfo').append content), 0 
+                                  
+      )   
+      scope.$on('leafletDirectiveMarker.mouseout', (event) ->
+          angular.element('#hoverInfo').empty() 
+      )          
+          
+          
+          
       scope.show_map = false
       leafletData.getMap().then (map) ->
         L.tileLayer.provider('Stamen.Watercolor').addTo(map)
@@ -264,6 +291,7 @@ angular.module 'sbMap', [
         markers: '=sbMarkers'
         center: '=sbCenter'
         showTime: '=sbShowTime'
+        hoverTemplate: '=sbHoverTemplate'
       },
       link: link,
       templateUrl: 'components/geokorp/dist/templates/sb_map.html'
