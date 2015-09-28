@@ -238,6 +238,33 @@ angular.module 'sbMap', [
                   lng : lng
         yearToCity
   ]
+  # TODO use this service instead of marker service
+  # nameEntitySearch.promise.then (data) ->            
+  #   if data.count != 0
+  #       possibleLocations = {}
+  #       for name, occurrences of data.total.relative
+  #           id = name.toLowerCase().replace(/-/g , "_")
+  #           possibleLocations[id] = { name: name, occurrences: occurrences }
+  #       geocoder(possibleLocations).then (locations) ->
+  #           c.log "### geocoded", locations 
+  .factory 'geocoder', ['$q', 'places', ($q, places) ->
+    (possibleLocations) ->
+      deferred = $q.defer()
+      places.then (placeResponse) ->
+        failedNames = []
+        locations = {}
+        for id, value of possibleLocations
+          name = value.name
+          if name.toLowerCase() of placeResponse.data
+            [lat, lng] = placeResponse.data[name.toLowerCase()]
+            locations[id] = angular.extend {lat: lat, lng: lng}, value
+          else
+            failedNames.push name 
+        c.log "geocoder, failed names: ", failedNames      
+        deferred.resolve {locations : locations}
+      deferred.promise
+  ]
+  
   .filter 'sbDateFilter', () ->
     (input, date, filterEnabled) ->
       out = input || []
@@ -247,6 +274,7 @@ angular.module 'sbMap', [
           if marker.date == date
             out[key] = marker
       out
+  
   .directive  'sbMap', ['$compile', '$timeout', 'leafletData', 'leafletEvents', ($compile, $timeout, leafletData, leafletEvents) ->
     link = (scope, element, attrs) ->
       scope.$watch 'markers', (markers) ->
