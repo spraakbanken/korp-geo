@@ -293,14 +293,14 @@ angular.module 'sbMap', [
                scope.$apply () ->            
                   compiled = $compile scope.hoverTemplate
                   content = compiled msgScope
+                  angular.element('#hover-info').empty() 
                   angular.element('#hover-info').append content
-                  angular.element('#hover-info').addClass "visible"), 0 
+                  angular.element('#hover-info').css('opacity', '1')), 0 
                   
                                   
       )   
       scope.$on('leafletDirectiveMarker.mouseout', (event) ->
-          angular.element('#hover-info').empty() 
-          angular.element('#hover-info').removeClass "visible"
+          angular.element('#hover-info').css('opacity','0')
       )          
           
           

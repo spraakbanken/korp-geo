@@ -116,8 +116,7 @@ sb-map {
   }
   
   #hover-info {
-    width: 200px; 
-    height: 11%;
+    width: 200px;
     position: absolute; 
     top: 0; 
     right: 0; 
@@ -125,14 +124,11 @@ sb-map {
     background-color: #f6f6f6;
     background-image: linear-gradient(to bottom, #fff, #e6e6e6);
     background-repeat: repeat-x;
-    visibility: hidden;
     padding: 10px;
     margin: 10px;
     border-radius: 4px;
-  }
-  
-  .visible {
-    visibility: visible !important;
+    opacity: 0;
+    transition : opacity 500ms;
   }
   
 }
