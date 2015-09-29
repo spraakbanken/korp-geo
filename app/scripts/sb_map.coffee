@@ -278,13 +278,6 @@ angular.module 'sbMap', [
   .directive  'sbMap', ['$compile', '$timeout', 'leafletData', 'leafletEvents', ($compile, $timeout, leafletData, leafletEvents) ->
     link = (scope, element, attrs) ->
       scope.$watch 'markers', (markers) ->
-          # for own key, value of markers
-          #     do (key, value) ->
-          #         msgScope = value.getMessageScope()
-          #         c.log "## events adding listener on ", msgScope.$id
-          #         msgScope.$on('leafletDirectiveMarker.mouseover', (event) ->
-          #             c.log "#### events", event              
-          #         )
           
           # TODO 
           # 1. Remove the old markers from the map
@@ -300,11 +293,14 @@ angular.module 'sbMap', [
                scope.$apply () ->            
                   compiled = $compile scope.hoverTemplate
                   content = compiled msgScope
-                  angular.element('#hoverInfo').append content), 0 
+                  angular.element('#hover-info').append content
+                  angular.element('#hover-info').addClass "visible"), 0 
+                  
                                   
       )   
       scope.$on('leafletDirectiveMarker.mouseout', (event) ->
-          angular.element('#hoverInfo').empty() 
+          angular.element('#hover-info').empty() 
+          angular.element('#hover-info').removeClass "visible"
       )          
           
           
