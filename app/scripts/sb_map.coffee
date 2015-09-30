@@ -16,6 +16,18 @@ angular.module 'sbMap', [
       )
     deferred.promise
   ]
+  .factory 'nameMapper', ['$q','$http', ($q, $http) ->
+    deferred = $q.defer()
+    $http.get('components/geokorp/dist/data/name_mapping.json')
+      .success((data) ->
+        deferred.resolve(data: data)
+      )
+      .error(() ->
+        c.log "failed to get name mapper for sb map"
+        deferred.reject()
+      )
+    deferred.promise
+  ]
   .factory 'lbTitles', ['$q', '$http', ($q, $http) ->
     parseXML = (data) ->
       xml = null
@@ -71,7 +83,7 @@ angular.module 'sbMap', [
       deferred.resolve works
     deferred.promise
   ]
-  .factory 'markers', ['$q', '$http', 'places', ($q, $http, places) ->
+  .factory 'markers', ['$rootScope', '$q', '$http', 'places', 'nameMapper', ($rootScope, $q, $http, places, nameMapper) ->
     (nameData) ->
       icon =
         type: 'div',
@@ -80,25 +92,45 @@ angular.module 'sbMap', [
         popupAnchor:  [0, 0]
 
       deferred = $q.defer()
-      places.then (placeResponse) ->
+      $q.all([places, nameMapper]).then ([placeResponse, nameMapperResponse]) ->
         names = _.keys nameData
         c.log "Given names: ", names
         usedNames = []
         markers = {}
+
+        mappedLocations = {}
         for name in names
-          if name.toLowerCase() of placeResponse.data
-            name = name.toLowerCase()
-            name = name.charAt(0).toUpperCase() + name.slice(1)
-            if name not in usedNames
-              usedNames.push name
-            [lat, lng] = placeResponse.data[name.toLowerCase()]
-            markers[name.replace(/-/g , "")] =
-              icon : icon
-              lat : lat
-              lng : lng
-              message : name
-        c.log "Used names: ", usedNames      
-        deferred.resolve {usedNames: usedNames, markers: markers}
+          if name.toLowerCase() of nameMapperResponse.data
+            mappedName = nameMapperResponse.data[name.toLowerCase()]
+            locs = mappedLocations[mappedName]
+            if not locs
+              locs = {}
+            locs[name] = nameData[name]
+            mappedLocations[mappedName] = locs
+          else if name.toLowerCase() of placeResponse.data
+            locs = mappedLocations[name]
+            if not locs
+              locs = {}
+            locs[name] = nameData[name]
+            mappedLocations[name] = locs
+
+        c.log "locations", mappedLocations
+
+        for own name, locs of mappedLocations
+            do(name, locs) ->
+              [lat, lng] = placeResponse.data[name.toLowerCase()]
+              s = $rootScope.$new(true)
+              s.names = locs
+
+              id = name.toLowerCase().replace(/-/g , "")
+              markers[id] =
+                icon : icon
+                lat : lat
+                lng : lng
+
+              markers[id].getMessageScope = () -> s
+
+        deferred.resolve markers
       deferred.promise
   ]
   .factory "timeData", ["$http", "places", ($http, places) ->
@@ -192,7 +224,6 @@ angular.module 'sbMap', [
 
 
     (markers) ->
-      c.log "## MAP running time data service ##"
       cqps = _.map markers, (name) -> """(word = "#{name.message}")"""
       c.log cqps
       tokenWrap = (expr) -> "[" + expr + "]"
@@ -239,14 +270,14 @@ angular.module 'sbMap', [
         yearToCity
   ]
   # TODO use this service instead of marker service
-  # nameEntitySearch.promise.then (data) ->            
+  # nameEntitySearch.promise.then (data) ->
   #   if data.count != 0
   #       possibleLocations = {}
   #       for name, occurrences of data.total.relative
   #           id = name.toLowerCase().replace(/-/g , "_")
   #           possibleLocations[id] = { name: name, occurrences: occurrences }
   #       geocoder(possibleLocations).then (locations) ->
-  #           c.log "### geocoded", locations 
+  #           c.log "### geocoded", locations
   .factory 'geocoder', ['$q', 'places', ($q, places) ->
     (possibleLocations) ->
       deferred = $q.defer()
@@ -259,12 +290,12 @@ angular.module 'sbMap', [
             [lat, lng] = placeResponse.data[name.toLowerCase()]
             locations[id] = angular.extend {lat: lat, lng: lng}, value
           else
-            failedNames.push name 
-        c.log "geocoder, failed names: ", failedNames      
+            failedNames.push name
+        c.log "geocoder, failed names: ", failedNames
         deferred.resolve {locations : locations}
       deferred.promise
   ]
-  
+
   .filter 'sbDateFilter', () ->
     (input, date, filterEnabled) ->
       out = input || []
@@ -274,41 +305,32 @@ angular.module 'sbMap', [
           if marker.date == date
             out[key] = marker
       out
-  
+
   .directive  'sbMap', ['$compile', '$timeout', 'leafletData', 'leafletEvents', ($compile, $timeout, leafletData, leafletEvents) ->
     link = (scope, element, attrs) ->
-      scope.$watch 'markers', (markers) ->
-          
-          # TODO 
-          # 1. Remove the old markers from the map
-          # 2. Iterate the new markers and generate proper marker objects
-          # 3. Give the markers to the leaftlet object  
-          
+
       scope.$on('leafletDirectiveMarker.mouseover', (event, marker) ->
-          
           index = marker.modelName
           msgScope = scope.markers[index].getMessageScope()
-          
+
           $timeout (() ->
-               scope.$apply () ->            
+               scope.$apply () ->
                   compiled = $compile scope.hoverTemplate
                   content = compiled msgScope
-                  angular.element('#hover-info').empty() 
+                  angular.element('#hover-info').empty()
                   angular.element('#hover-info').append content
-                  angular.element('#hover-info').css('opacity', '1')), 0 
-                  
-                                  
-      )   
+                  angular.element('.hover-info').css('opacity', '1')), 0
+      )
+
       scope.$on('leafletDirectiveMarker.mouseout', (event) ->
-          angular.element('#hover-info').css('opacity','0')
-      )          
-          
-          
-          
+          angular.element('.hover-info').css('opacity','0')
+      )
+
       scope.show_map = false
       leafletData.getMap().then (map) ->
         L.tileLayer.provider('Stamen.Watercolor').addTo(map)
         scope.show_map = true
+
     {
       restrict: 'E',
       scope: {

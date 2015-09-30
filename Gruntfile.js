@@ -203,7 +203,8 @@ module.exports = function (grunt) {
           dest: '<%= geokorp.dist %>',
           src: [
             'templates/{,*/}*.*',
-            'data/places.json'
+            'data/places.json',
+            'data/name_mapping.json'
           ]
         }, {
           expand: true,
