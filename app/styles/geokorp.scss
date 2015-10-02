@@ -22,6 +22,10 @@ sb-map {
     background-color: #e6e6e6;
   }
 
+  .leaflet-bar a:link, .leaflet-bar a:visited {
+    color: black
+  }
+
   /* Everything but the jumbotron gets side spacing for mobile first views */
   .header,
   .marketing,
