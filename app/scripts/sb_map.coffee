@@ -84,45 +84,41 @@ angular.module 'sbMap', [
     deferred.promise
   ]
   .factory 'markers', ['$rootScope', '$q', '$http', 'places', 'nameMapper', ($rootScope, $q, $http, places, nameMapper) ->
-    (nameData) ->
-      icon =
-        type: 'div',
-        iconSize: [5, 5],
-        html: '<span class="dot"></span>',
-        popupAnchor:  [0, 0]
+    icon =
+      type: 'div',
+      iconSize: [5, 5],
+      html: '<span class="dot"></span>',
+      popupAnchor:  [0, 0]
 
+    return (nameData) ->
       deferred = $q.defer()
       $q.all([places, nameMapper]).then ([placeResponse, nameMapperResponse]) ->
         names = _.keys nameData
-        c.log "Given names: ", names
         usedNames = []
         markers = {}
 
         mappedLocations = {}
         for name in names
-          if name.toLowerCase() of nameMapperResponse.data
-            mappedName = nameMapperResponse.data[name.toLowerCase()]
+          mappedName = null
+          nameLow = name.toLowerCase()
+          if nameLow of nameMapperResponse.data
+            mappedName = nameMapperResponse.data[nameLow]
+          else if nameLow of placeResponse.data
+            mappedName = nameLow
+          if mappedName
             locs = mappedLocations[mappedName]
             if not locs
               locs = {}
             locs[name] = nameData[name]
             mappedLocations[mappedName] = locs
-          else if name.toLowerCase() of placeResponse.data
-            locs = mappedLocations[name]
-            if not locs
-              locs = {}
-            locs[name] = nameData[name]
-            mappedLocations[name] = locs
-
-        c.log "locations", mappedLocations
 
         for own name, locs of mappedLocations
             do(name, locs) ->
-              [lat, lng] = placeResponse.data[name.toLowerCase()]
+              [lat, lng] = placeResponse.data[name]
               s = $rootScope.$new(true)
               s.names = locs
 
-              id = name.toLowerCase().replace(/-/g , "")
+              id = name.replace(/-/g , "")
               markers[id] =
                 icon : icon
                 lat : lat
@@ -268,32 +264,6 @@ angular.module 'sbMap', [
                   lat: lat
                   lng : lng
         yearToCity
-  ]
-  # TODO use this service instead of marker service
-  # nameEntitySearch.promise.then (data) ->
-  #   if data.count != 0
-  #       possibleLocations = {}
-  #       for name, occurrences of data.total.relative
-  #           id = name.toLowerCase().replace(/-/g , "_")
-  #           possibleLocations[id] = { name: name, occurrences: occurrences }
-  #       geocoder(possibleLocations).then (locations) ->
-  #           c.log "### geocoded", locations
-  .factory 'geocoder', ['$q', 'places', ($q, places) ->
-    (possibleLocations) ->
-      deferred = $q.defer()
-      places.then (placeResponse) ->
-        failedNames = []
-        locations = {}
-        for id, value of possibleLocations
-          name = value.name
-          if name.toLowerCase() of placeResponse.data
-            [lat, lng] = placeResponse.data[name.toLowerCase()]
-            locations[id] = angular.extend {lat: lat, lng: lng}, value
-          else
-            failedNames.push name
-        c.log "geocoder, failed names: ", failedNames
-        deferred.resolve {locations : locations}
-      deferred.promise
   ]
 
   .filter 'sbDateFilter', () ->
