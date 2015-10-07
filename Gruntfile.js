@@ -262,6 +262,16 @@ module.exports = function (grunt) {
         }]
       }
     },
+    html2js: {
+      options: {
+        base: 'app',
+        module: 'sbMapTemplate'
+      },
+      main: {
+        src: ['app/template/*.html'],
+        dest: '.tmp/scripts/geokorp-templates.js'
+      },
+    },
     concat: {
       dist: {
         src: ['.tmp/scripts/*.js'],
@@ -298,6 +308,7 @@ module.exports = function (grunt) {
     'clean:dist',
     'concurrent:dist',
     'autoprefixer',
+    'html2js',
     'concat',
     'ngmin',
     'copy:dist',

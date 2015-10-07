@@ -2,7 +2,8 @@
 c = console
 
 angular.module 'sbMap', [
-  'leaflet-directive'
+  'leaflet-directive',
+  'sbMapTemplate'
   ]
   .factory 'places', ['$q', '$http', ($q, $http) ->
 
@@ -338,6 +339,6 @@ angular.module 'sbMap', [
         hoverTemplate: '=sbHoverTemplate'
       },
       link: link,
-      templateUrl: 'components/geokorp/dist/templates/sb_map.html'
+      templateUrl: 'template/sb_map.html'
     }
   ]
