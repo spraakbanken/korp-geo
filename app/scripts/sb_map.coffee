@@ -4,17 +4,32 @@ c = console
 angular.module 'sbMap', [
   'leaflet-directive'
   ]
-  .factory 'places', ['$q','$http', ($q, $http) ->
-    deferred = $q.defer()
-    $http.get('components/geokorp/dist/data/places.json')
-      .success((data) ->
-        deferred.resolve(data: data)
-      )
-      .error(() ->
-        c.log "failed to get place data for sb map"
-        deferred.reject()
-      )
-    deferred.promise
+  .factory 'places', ['$q', '$http', ($q, $http) ->
+
+    class Places
+
+      constructor: () ->
+        @places = null
+
+      getLocationData: () ->
+        def = $q.defer()
+
+        if not @places
+          $http.get('components/geokorp/dist/data/places.json')
+            .success((data) =>
+              @places = data: data
+              def.resolve @places
+            )
+            .error(() =>
+              def.reject()
+              c.log "failed to get place data for sb map"
+            )
+        else
+          def.resolve @places
+
+        return def.promise
+
+    return new Places()
   ]
   .factory 'nameMapper', ['$q','$http', ($q, $http) ->
     deferred = $q.defer()
@@ -92,7 +107,7 @@ angular.module 'sbMap', [
 
     return (nameData) ->
       deferred = $q.defer()
-      $q.all([places, nameMapper]).then ([placeResponse, nameMapperResponse]) ->
+      $q.all([places.getLocationData(), nameMapper]).then ([placeResponse, nameMapperResponse]) ->
         names = _.keys nameData
         usedNames = []
         markers = {}
