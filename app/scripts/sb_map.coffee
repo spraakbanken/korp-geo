@@ -32,16 +32,29 @@ angular.module 'sbMap', [
     return new Places()
   ]
   .factory 'nameMapper', ['$q','$http', ($q, $http) ->
-    deferred = $q.defer()
-    $http.get('components/geokorp/dist/data/name_mapping.json')
-      .success((data) ->
-        deferred.resolve(data: data)
-      )
-      .error(() ->
-        c.log "failed to get name mapper for sb map"
-        deferred.reject()
-      )
-    deferred.promise
+
+    class NameMapper
+
+      constructor: () ->
+        @mapper = null
+
+      getNameMapper: () ->
+        def = $q.defer()
+
+        if not @mapper
+          $http.get('components/geokorp/dist/data/name_mapping.json')
+            .success((data) ->
+              def.resolve(data: data)
+            )
+            .error(() ->
+              c.log "failed to get name mapper for sb map"
+              def.reject()
+            )
+        else
+          def.resolve @mapper
+        return  def.promise
+
+    return new NameMapper()
   ]
   .factory 'lbTitles', ['$q', '$http', ($q, $http) ->
     parseXML = (data) ->
@@ -107,7 +120,7 @@ angular.module 'sbMap', [
 
     return (nameData) ->
       deferred = $q.defer()
-      $q.all([places.getLocationData(), nameMapper]).then ([placeResponse, nameMapperResponse]) ->
+      $q.all([places.getLocationData(), nameMapper.getNameMapper()]).then ([placeResponse, nameMapperResponse]) ->
         names = _.keys nameData
         usedNames = []
         markers = {}
