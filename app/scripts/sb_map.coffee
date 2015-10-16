@@ -327,17 +327,25 @@ angular.module 'sbMap', [
 
       scope.show_map = false
       leafletData.getMap().then (map) ->
+          
           watercolor = L.tileLayer.provider('Stamen.Watercolor')
           osm = L.tileLayer.provider('OpenStreetMap')
-          watercolor.addTo map
-          # osm.addTo map
+
+          if scope.baseLayer is "Open Street Map"
+              osm.addTo map
+          else
+              watercolor.addTo map
 
           baseLayers = 
-              "Stamen Watercolor": watercolor
-              "Open Street Map": osm
-  
+              "Stamen Watercolor" : watercolor
+              "Open Street Map" : osm
+
           layerControl = L.control.layers baseLayers, null, { position: "bottomleft" }
           map.addControl layerControl
+          
+          map.on 'baselayerchange', (a) =>
+              scope.baseLayer = a.name
+          
           scope.show_map = true
 
     return {
@@ -347,6 +355,7 @@ angular.module 'sbMap', [
         center: '=sbCenter'
         showTime: '=sbShowTime'
         hoverTemplate: '=sbHoverTemplate'
+        baseLayer: '=sbBaseLayer'
       },
       link: link,
       templateUrl: 'template/sb_map.html'
