@@ -327,10 +327,20 @@ angular.module 'sbMap', [
 
       scope.show_map = false
       leafletData.getMap().then (map) ->
-        L.tileLayer.provider('Stamen.Watercolor').addTo(map)
-        scope.show_map = true
+          watercolor = L.tileLayer.provider('Stamen.Watercolor')
+          osm = L.tileLayer.provider('OpenStreetMap')
+          watercolor.addTo map
+          # osm.addTo map
 
-    {
+          baseLayers = 
+              "Stamen Watercolor": watercolor
+              "Open Street Map": osm
+  
+          layerControl = L.control.layers baseLayers, null, { position: "bottomleft" }
+          map.addControl layerControl
+          scope.show_map = true
+
+    return {
       restrict: 'E',
       scope: {
         markers: '=sbMarkers'
