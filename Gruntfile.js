@@ -168,8 +168,8 @@ module.exports = function (grunt) {
     compass: {
       options: {
         sassDir: '<%= geokorp.app %>/styles',
-        cssDir: '.tmp/styles',
-        generatedImagesDir: '.tmp/images/generated',
+        cssDir: '<%= geokorp.dist %>/styles',
+        generatedImagesDir: '<%= geokorp.dist %>/images/generated',
         imagesDir: '<%= geokorp.app %>/images',
         javascriptsDir: '<%= geokorp.app %>/scripts',
         fontsDir: '<%= geokorp.app %>/styles/fonts',
@@ -213,8 +213,16 @@ module.exports = function (grunt) {
           src: ['generated/*']
         }, {
           expand: true,
-          cwd: '.',
-          src: 'bower_components/bootstrap-sass-official/assets/fonts/bootstrap/*',
+          cwd: '.tmp',
+          src: 'scripts/sb_map.js',
+          dest: '<%= geokorp.dist %>',
+          rename: function(dest,src) {
+            return dest + "/scripts/geokorp.js";
+          }
+        }, {
+          expand: true,
+          cwd: '.tmp',
+          src: 'scripts/geokorp-templates.js',
           dest: '<%= geokorp.dist %>'
         }]
       },
@@ -241,27 +249,6 @@ module.exports = function (grunt) {
         'compass:dist'
       ]
     },
-    ngmin: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '.tmp/concat/scripts',
-          src: 'scripts.js',
-          dest: '.tmp/concat/scripts'
-        }]
-      }
-    },
-    cssmin: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '.tmp/styles',
-          src: ['*.css', '!*.min.css'],
-          dest: 'dist/styles',
-          ext: '.min.css'
-        }]
-      }
-    },
     html2js: {
       options: {
         base: 'app',
@@ -277,13 +264,6 @@ module.exports = function (grunt) {
         src: ['.tmp/scripts/*.js'],
         dest: '.tmp/geokorp.js',
       },
-    },
-    uglify: {
-      dist: {
-        files: {
-          'dist/scripts/geokorp.min.js': ['.tmp/geokorp.js']
-        }
-      }
     },
 
     // Test settings
@@ -310,10 +290,7 @@ module.exports = function (grunt) {
     'autoprefixer',
     'html2js',
     'concat',
-    'ngmin',
     'copy:dist',
-    'cssmin',
-    'uglify',
     'clean:server',
   ]);
 
