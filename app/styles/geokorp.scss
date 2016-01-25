@@ -3,7 +3,7 @@ $icon-font-path: "../bower_components/bootstrap-sass-official/assets/fonts/boots
 sb-map {
   padding: 8px;
 
-  .leaflet-marker-icon.leaflet-div-icon.leaflet-zoom-animated.leaflet-clickable {
+  .leaflet-marker-icon.leaflet-div-icon.leaflet-clickable {
     background-color : red;
     border : none;
     border-radius: 10px;
@@ -124,6 +124,7 @@ sb-map {
     position: absolute;
     top: 0;
     right: 0;
+    z-index: 100;
   }
 
   .hover-info {
