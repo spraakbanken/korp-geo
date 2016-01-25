@@ -130,9 +130,9 @@ angular.module 'sbMap', [
         for name in names
           mappedName = null
           nameLow = name.toLowerCase()
-          if nameLow of nameMapperResponse.data
+          if nameMapperResponse.data.hasOwnProperty nameLow
             mappedName = nameMapperResponse.data[nameLow]
-          else if nameLow of placeResponse.data
+          else if placeResponse.data.hasOwnProperty nameLow
             mappedName = nameLow
           if mappedName
             locs = mappedLocations[mappedName]
@@ -327,7 +327,7 @@ angular.module 'sbMap', [
 
       scope.show_map = false
       leafletData.getMap().then (map) ->
-          
+
           watercolor = L.tileLayer.provider('Stamen.Watercolor')
           osm = L.tileLayer.provider('OpenStreetMap')
 
@@ -336,16 +336,16 @@ angular.module 'sbMap', [
           else
               watercolor.addTo map
 
-          baseLayers = 
+          baseLayers =
               "Stamen Watercolor" : watercolor
               "Open Street Map" : osm
 
           layerControl = L.control.layers baseLayers, null, { position: "bottomleft" }
           map.addControl layerControl
-          
+
           map.on 'baselayerchange', (a) =>
               scope.baseLayer = a.name
-          
+
           scope.show_map = true
 
     return {
