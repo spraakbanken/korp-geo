@@ -29,4 +29,4 @@ for line in sys.stdin:
 
 
 # cPickle.dump(output, open("places.pickle", "w"))
-json.dump(output, open("places.json", "w"), indent=2)
+json.dump(output, open("osm-places.json", "w"), indent=2)
