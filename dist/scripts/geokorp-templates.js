@@ -2,9 +2,10 @@ angular.module('sbMapTemplate', ['template/sb_map.html']);
 
 angular.module("template/sb_map.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/sb_map.html",
-    "<div id=\"sb-map-container\" ng-style=\"{visibility: show_map ? 'visible' : 'hidden'}\" class=\"map\" >\n" +
-    "    <div id=\"leaflet-map\">\n" +
-    "        <leaflet center=\"center\" markers=\"markers | sbDateFilter:date:filterEnabled\" height=\"520px\"></leaflet>\n" +
+    "<!-- ng-style=\"{visibility: show_map ? 'visible' : 'hidden'}\" -->\n" +
+    "<div id=\"sb-map-container\" class=\"map\" >\n" +
+    "    <div id=\"leaflet-map\" ng-if=\"showMap\">\n" +
+    "        <leaflet center=\"center\" markers=\"markers | sbDateFilter:date:filterEnabled\" height=\"520px\" layers=\"layers\" defaults=\"defaults\"></leaflet>\n" +
     "    </div>\n" +
     "    <div id=\"hover-info\">\n" +
     "\n" +

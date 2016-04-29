@@ -420,6 +420,7 @@
     '$compile', '$timeout', 'leafletData', 'leafletEvents', function($compile, $timeout, leafletData, leafletEvents) {
       var link;
       link = function(scope, element, attrs) {
+        var osmLayer, stamenLayer;
         scope.$on('leafletDirectiveMarker.mouseover', function(event, marker) {
           var index, msgScope;
           index = marker.modelName;
@@ -438,31 +439,55 @@
         scope.$on('leafletDirectiveMarker.mouseout', function(event) {
           return angular.element('.hover-info').css('opacity', '0');
         });
-        scope.show_map = false;
-        return leafletData.getMap().then(function(map) {
-          var baseLayers, layerControl, osm, watercolor;
-          watercolor = L.tileLayer.provider('Stamen.Watercolor');
-          osm = L.tileLayer.provider('OpenStreetMap');
-          if (scope.baseLayer === "Open Street Map") {
-            osm.addTo(map);
-          } else {
-            watercolor.addTo(map);
+        scope.showMap = false;
+        angular.extend(scope, {
+          layers: {
+            baselayers: {},
+            overlays: {
+              clusterlayer: {
+                name: "Real world data",
+                type: "markercluster",
+                visible: true,
+                layerParams: {
+                  showOnSelector: false,
+                  spiderfyOnMaxZoom: false,
+                  showCoverageOnHover: false,
+                  maxClusterRadius: 40
+                }
+              }
+            }
+          },
+          defaults: {
+            controls: {
+              layers: {
+                visible: true,
+                position: 'bottomleft',
+                collapsed: true
+              }
+            }
           }
-          baseLayers = {
-            "Stamen Watercolor": watercolor,
-            "Open Street Map": osm
-          };
-          layerControl = L.control.layers(baseLayers, null, {
-            position: "bottomleft"
-          });
-          map.addControl(layerControl);
-          map.on('baselayerchange', (function(_this) {
-            return function(a) {
-              return scope.baseLayer = a.name;
-            };
-          })(this));
-          return scope.show_map = true;
         });
+        osmLayer = {
+          name: 'OpenStreetMap',
+          type: 'xyz',
+          url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        };
+        stamenLayer = {
+          name: 'Stamen Watercolor',
+          type: 'xyz',
+          url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.png',
+          layerOptions: {
+            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
+          }
+        };
+        if (scope.baseLayer === "Stamen Watercolor") {
+          scope.layers.baselayers.watercolor = stamenLayer;
+          scope.layers.baselayers.osm = osmLayer;
+        } else {
+          scope.layers.baselayers.osm = osmLayer;
+          scope.layers.baselayers.watercolor = stamenLayer;
+        }
+        return scope.showMap = true;
       };
       return {
         restrict: 'E',

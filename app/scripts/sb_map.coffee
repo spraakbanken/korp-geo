@@ -325,28 +325,62 @@ angular.module 'sbMap', [
           angular.element('.hover-info').css('opacity','0')
       )
 
-      scope.show_map = false
-      leafletData.getMap().then (map) ->
+      scope.showMap = false
 
-          watercolor = L.tileLayer.provider('Stamen.Watercolor')
-          osm = L.tileLayer.provider('OpenStreetMap')
+      angular.extend(scope, {
+          layers: {
+              baselayers: {
+              },
+              overlays: {
+                  clusterlayer: {
+                      name: "Real world data",
+                      type: "markercluster",
+                      visible: true,
+                      layerParams: {
+                          showOnSelector: false,
+                          spiderfyOnMaxZoom: false,
+                          showCoverageOnHover: false,
+                          # zoomToBoundsOnClick: false,
+                          maxClusterRadius: 40,
+                          # iconCreateFunction: (cluster) -> return L.divIcon({ html: '<b>' + cluster.getChildCount() + '</b>' })
+                      }
+                  }
+              }
+          },
+          defaults: {
+              controls: {
+                  layers: {
+                      visible: true,
+                      position: 'bottomleft',
+                      collapsed: true,
+                  }
+              }
+          }
+      })
 
-          if scope.baseLayer is "Open Street Map"
-              osm.addTo map
-          else
-              watercolor.addTo map
+      osmLayer = {
+                    name: 'OpenStreetMap',
+                    type: 'xyz',
+                    url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                }
+      
+      stamenLayer = {
+                      name: 'Stamen Watercolor',
+                      type: 'xyz',
+                      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.png',
+                      layerOptions: {
+                          attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
+                      }
+                   }
+      
+      if scope.baseLayer == "Stamen Watercolor"
+          scope.layers.baselayers.watercolor  = stamenLayer
+          scope.layers.baselayers.osm  = osmLayer
+      else
+          scope.layers.baselayers.osm  = osmLayer
+          scope.layers.baselayers.watercolor  = stamenLayer
 
-          baseLayers =
-              "Stamen Watercolor" : watercolor
-              "Open Street Map" : osm
-
-          layerControl = L.control.layers baseLayers, null, { position: "bottomleft" }
-          map.addControl layerControl
-
-          map.on 'baselayerchange', (a) =>
-              scope.baseLayer = a.name
-
-          scope.show_map = true
+      scope.showMap = true
 
     return {
       restrict: 'E',

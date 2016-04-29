@@ -3,12 +3,19 @@ $icon-font-path: "../bower_components/bootstrap-sass-official/assets/fonts/boots
 sb-map {
   padding: 8px;
 
-  .leaflet-marker-icon.leaflet-div-icon.leaflet-clickable {
+  .dot {
     background-color : red;
     border : none;
     border-radius: 10px;
     width : 7px !important;
     height : 7px !important;
+    z-index : 400;
+    position: absolute;
+  }
+  
+  .leaflet-marker-icon.leaflet-div-icon.leaflet-clickable {
+    border: none;
+    background-color: transparent
   }
 
   .leaflet-popup-content-wrapper {
@@ -26,6 +33,13 @@ sb-map {
     color: black
   }
 
+  .marker-cluster-small {
+    background-color: rgba(136, 220, 168, 0.6);
+    div {
+      background-color: rgba(136, 220, 168, 0.6);
+    }
+  }
+  
   /* Everything but the jumbotron gets side spacing for mobile first views */
   .header,
   .marketing,

@@ -1,6 +1,7 @@
-<div id="sb-map-container" ng-style="{visibility: show_map ? 'visible' : 'hidden'}" class="map" >
-    <div id="leaflet-map">
-        <leaflet center="center" markers="markers | sbDateFilter:date:filterEnabled" height="520px"></leaflet>
+ <!-- ng-style="{visibility: show_map ? 'visible' : 'hidden'}" -->
+<div id="sb-map-container" class="map" >
+    <div id="leaflet-map" ng-if="showMap">
+        <leaflet center="center" markers="markers | sbDateFilter:date:filterEnabled" height="520px" layers="layers" defaults="defaults"></leaflet>
     </div>
     <div id="hover-info">
 
