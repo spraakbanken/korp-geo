@@ -1,12 +1,6 @@
 /* line 3, ../../app/styles/geokorp.scss */
 sb-map {
   padding: 8px;
-  /* Everything but the jumbotron gets side spacing for mobile first views */
-  /* Custom page header */
-  /* Custom page footer */
-  /* Main marketing message and sign up button */
-  /* Supporting marketing content */
-  /* Responsive: Portrait tablets and up */
 }
 /* line 6, ../../app/styles/geokorp.scss */
 sb-map .dot {
@@ -38,91 +32,24 @@ sb-map .leaflet-popup-tip {
 sb-map .leaflet-bar a:link, sb-map .leaflet-bar a:visited {
   color: black;
 }
-/* line 37, ../../app/styles/geokorp.scss */
-sb-map .header,
-sb-map .marketing,
-sb-map .footer {
-  padding-left: 15px;
-  padding-right: 15px;
+/* line 36, ../../app/styles/geokorp.scss */
+sb-map .marker-cluster-small {
+  background-color: rgba(136, 220, 168, 0.6);
 }
-/* line 45, ../../app/styles/geokorp.scss */
-sb-map .header {
-  border-bottom: 1px solid #e5e5e5;
-  margin-bottom: 10px;
-  /* Make the masthead heading the same height as the navigation */
+/* line 38, ../../app/styles/geokorp.scss */
+sb-map .marker-cluster-small div {
+  background-color: rgba(136, 220, 168, 0.6);
 }
-/* line 50, ../../app/styles/geokorp.scss */
-sb-map .header h3 {
-  margin-top: 0;
-  margin-bottom: 0;
-  line-height: 40px;
-  padding-bottom: 19px;
-}
-/* line 59, ../../app/styles/geokorp.scss */
-sb-map .footer {
-  padding-top: 19px;
-  color: #777;
-  border-top: 1px solid #e5e5e5;
-}
-/* line 65, ../../app/styles/geokorp.scss */
-sb-map .container-narrow > hr {
-  margin: 30px 0;
-}
-/* line 70, ../../app/styles/geokorp.scss */
-sb-map .jumbotron {
-  text-align: center;
-  border-bottom: 1px solid #e5e5e5;
-}
-/* line 74, ../../app/styles/geokorp.scss */
-sb-map .jumbotron .btn {
-  font-size: 21px;
-  padding: 14px 24px;
-}
-/* line 81, ../../app/styles/geokorp.scss */
-sb-map .marketing {
-  margin: 40px 0;
-}
-/* line 84, ../../app/styles/geokorp.scss */
-sb-map .marketing p + h4 {
-  margin-top: 28px;
-}
-@media screen and (min-width: 768px) {
-  /* line 3, ../../app/styles/geokorp.scss */
-  sb-map {
-    /* Remove the padding we set earlier */
-    /* Space out the masthead */
-    /* Remove the bottom border on the jumbotron for visual effect */
-  }
-  /* line 91, ../../app/styles/geokorp.scss */
-  sb-map .container {
-    max-width: 730px;
-  }
-  /* line 96, ../../app/styles/geokorp.scss */
-  sb-map .header,
-  sb-map .marketing,
-  sb-map .footer {
-    padding-left: 0;
-    padding-right: 0;
-  }
-  /* line 103, ../../app/styles/geokorp.scss */
-  sb-map .header {
-    margin-bottom: 30px;
-  }
-  /* line 107, ../../app/styles/geokorp.scss */
-  sb-map .jumbotron {
-    border-bottom: 0;
-  }
-}
-/* line 112, ../../app/styles/geokorp.scss */
+/* line 43, ../../app/styles/geokorp.scss */
 sb-map .map {
   border: 1px solid black;
 }
-/* line 116, ../../app/styles/geokorp.scss */
+/* line 47, ../../app/styles/geokorp.scss */
 sb-map #sb-map-container {
   position: relative;
   height: 522px;
 }
-/* line 121, ../../app/styles/geokorp.scss */
+/* line 52, ../../app/styles/geokorp.scss */
 sb-map #leaflet-map {
   width: 100%;
   height: 100%;
@@ -130,7 +57,7 @@ sb-map #leaflet-map {
   top: 0;
   left: 0;
 }
-/* line 129, ../../app/styles/geokorp.scss */
+/* line 60, ../../app/styles/geokorp.scss */
 sb-map #hover-info {
   width: 200px;
   position: absolute;
@@ -138,7 +65,7 @@ sb-map #hover-info {
   right: 0;
   z-index: 100;
 }
-/* line 137, ../../app/styles/geokorp.scss */
+/* line 68, ../../app/styles/geokorp.scss */
 sb-map .hover-info {
   opacity: 1;
   transition: opacity 500ms;
