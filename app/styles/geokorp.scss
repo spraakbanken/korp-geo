@@ -1,6 +1,8 @@
 $icon-font-path: "../bower_components/bootstrap-sass-official/assets/fonts/bootstrap/";
 
 sb-map {
+  #mapid { height: 520px; }
+    
   padding: 8px;
 
   .dot {
@@ -62,7 +64,7 @@ sb-map {
     position: absolute;
     top: 0;
     right: 0;
-    z-index: 100;
+    z-index: 800;
   }
 
   .hover-info {

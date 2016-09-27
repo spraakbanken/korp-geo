@@ -5,7 +5,7 @@
 
   c = console;
 
-  angular.module('sbMap', ['leaflet-directive', 'sbMapTemplate']).factory('places', [
+  angular.module('sbMap', ['sbMapTemplate']).factory('places', [
     '$q', '$http', function($q, $http) {
       var Places;
       Places = (function() {
@@ -135,76 +135,111 @@
       };
     }
   ]).directive('sbMap', [
-    '$compile', '$timeout', 'leafletData', function($compile, $timeout, leafletData) {
+    '$compile', '$timeout', '$rootScope', function($compile, $timeout, $rootScope) {
       var link;
       link = function(scope, element, attrs) {
-        var osmLayer, stamenLayer;
-        scope.$on('leafletDirectiveMarker.mouseover', function(event, marker) {
-          var index, msgScope;
-          index = marker.modelName;
-          msgScope = scope.markers[index].getMessageScope();
+        var baseLayers, createClusterIcon, icon, mouseOut, mouseOver, openStreetMap, stamenWaterColor;
+        scope.showMap = false;
+        scope.map = L.map("mapid", {
+          minZoom: 1,
+          maxZoom: 16
+        }).setView([51.505, -0.09], 13);
+        stamenWaterColor = L.tileLayer.provider("Stamen.Watercolor");
+        openStreetMap = L.tileLayer.provider("OpenStreetMap");
+        icon = function(color) {
+          return L.icon({
+            iconUrl: "http://api.tiles.mapbox.com/v3/marker/pin-m+" + color + ".png",
+            iconSize: [38, 95]
+          });
+        };
+        createClusterIcon = function(cluster) {
+          return L.divIcon({
+            html: '<div><span>' + cluster.getChildCount() + '</span></div>',
+            className: 'marker-cluster marker-cluster-' + "small",
+            iconSize: new L.Point(40, 40)
+          });
+        };
+        scope.markerCluster = L.markerClusterGroup({
+          showOnSelector: false,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false,
+          maxClusterRadius: 40,
+          iconCreateFunction: createClusterIcon
+        });
+        scope.markerCluster.on('clustermouseover', function(e) {
+          return mouseOver((_.map(e.layer.getAllChildMarkers(), function(layer) {
+            return layer.markerData;
+          })).slice(0, 5));
+        });
+        scope.markerCluster.on('clustermouseout', function(e) {
+          return mouseOut();
+        });
+        scope.markerCluster.on('mouseover', function(e) {
+          return mouseOver([e.layer.markerData]);
+        });
+        scope.markerCluster.on('mouseout', function(e) {
+          return mouseOut();
+        });
+        mouseOver = function(markerData) {
           return $timeout((function() {
             return scope.$apply(function() {
-              var compiled, content;
-              compiled = $compile(scope.hoverTemplate);
-              content = compiled(msgScope);
+              var compiled, content, marker, msgScope, _i, _len;
+              content = [];
+              for (_i = 0, _len = markerData.length; _i < _len; _i++) {
+                marker = markerData[_i];
+                msgScope = $rootScope.$new(true);
+                msgScope.point = marker.point;
+                msgScope.label = marker.label;
+                compiled = $compile(scope.hoverTemplate);
+                content.push(compiled(msgScope));
+              }
               angular.element('#hover-info').empty();
               angular.element('#hover-info').append(content);
               return angular.element('.hover-info').css('opacity', '1');
             });
           }), 0);
-        });
-        scope.$on('leafletDirectiveMarker.mouseout', function(event) {
+        };
+        mouseOut = function() {
           return angular.element('.hover-info').css('opacity', '0');
-        });
-        scope.showMap = false;
-        angular.extend(scope, {
-          layers: {
-            baselayers: {},
-            overlays: {
-              clusterlayer: {
-                name: "Real world data",
-                type: "markercluster",
-                visible: true,
-                layerParams: {
-                  showOnSelector: false,
-                  spiderfyOnMaxZoom: false,
-                  showCoverageOnHover: false,
-                  maxClusterRadius: 40
-                }
-              }
-            }
-          },
-          defaults: {
-            controls: {
-              layers: {
-                visible: true,
-                position: 'bottomleft',
-                collapsed: true
-              }
-            }
-          }
-        });
-        osmLayer = {
-          name: 'OpenStreetMap',
-          type: 'xyz',
-          url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         };
-        stamenLayer = {
-          name: 'Stamen Watercolor',
-          type: 'xyz',
-          url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.png',
-          layerOptions: {
-            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
+        scope.map.addLayer(scope.markerCluster);
+        scope.$watch("markers", function(markers) {
+          var marker, markerData, marker_id, _fn, _i, _len, _ref, _results;
+          scope.markerCluster.clearLayers();
+          _ref = _.keys(markers);
+          _fn = function(markerData) {
+            return element.bind("click", function() {
+              return scope.markerCallback(markerData);
+            });
+          };
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            marker_id = _ref[_i];
+            markerData = markers[marker_id];
+            marker = L.marker([markerData.lat, markerData.lng], {
+              icon: icon(markerData.color)
+            });
+            marker.markerData = markerData;
+            scope.markerCluster.addLayer(marker);
+            element = angular.element('<a class="link">' + markerData.point.name + '</a>');
+            _fn(markerData);
+            _results.push(marker.bindPopup(element[0]));
           }
-        };
+          return _results;
+        });
         if (scope.baseLayer === "Stamen Watercolor") {
-          scope.layers.baselayers.watercolor = stamenLayer;
-          scope.layers.baselayers.osm = osmLayer;
+          stamenWaterColor.addTo(scope.map);
         } else {
-          scope.layers.baselayers.osm = osmLayer;
-          scope.layers.baselayers.watercolor = stamenLayer;
+          openStreetMap.addTo(scope.map);
         }
+        baseLayers = {
+          "Stamen Watercolor": stamenWaterColor,
+          "OpenStreetMap": openStreetMap
+        };
+        L.control.layers(baseLayers, null, {
+          position: "bottomleft"
+        }).addTo(scope.map);
+        scope.map.setView([scope.center.lat, scope.center.lng], scope.center.zoom);
         return scope.showMap = true;
       };
       return {
@@ -213,7 +248,8 @@
           markers: '=sbMarkers',
           center: '=sbCenter',
           hoverTemplate: '=sbHoverTemplate',
-          baseLayer: '=sbBaseLayer'
+          baseLayer: '=sbBaseLayer',
+          markerCallback: '=sbMarkerCallback'
         },
         link: link,
         templateUrl: 'template/sb_map.html'
