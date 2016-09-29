@@ -138,52 +138,101 @@
     '$compile', '$timeout', '$rootScope', function($compile, $timeout, $rootScope) {
       var link;
       link = function(scope, element, attrs) {
-        var baseLayers, createClusterIcon, icon, mouseOut, mouseOver, openStreetMap, stamenWaterColor;
+        var baseLayers, createClusterIcon, createMarkerCluster, createMarkerIcon, map, mouseOut, mouseOver, openStreetMap, shadeColor, stamenWaterColor;
         scope.showMap = false;
-        scope.map = L.map("mapid", {
+        map = angular.element(element.find(".map-container"));
+        scope.map = L.map(map[0], {
           minZoom: 1,
           maxZoom: 16
         }).setView([51.505, -0.09], 13);
         stamenWaterColor = L.tileLayer.provider("Stamen.Watercolor");
         openStreetMap = L.tileLayer.provider("OpenStreetMap");
-        icon = function(color) {
-          return L.icon({
-            iconUrl: "http://api.tiles.mapbox.com/v3/marker/pin-m+" + color + ".png",
-            iconSize: [38, 95]
+        createMarkerIcon = function(color) {
+          return L.divIcon({
+            html: '<div class="geokorp-marker" style="background-color:' + color + '"></div>',
+            iconSize: new L.Point(10, 10)
           });
+        };
+        shadeColor = function(color, percent) {
+          var B, G, R, f, p, t;
+          f = parseInt(color.slice(1), 16);
+          t = percent < 0 ? 0 : 255;
+          p = percent < 0 ? percent * -1 : percent;
+          R = f >> 16;
+          G = f >> 8 & 0x00FF;
+          B = f & 0x0000FF;
+          return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 + (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1);
         };
         createClusterIcon = function(cluster) {
+          var child, color, elements, res, _i, _j, _len, _len1, _ref, _ref1;
+          elements = {};
+          _ref = cluster.getAllChildMarkers();
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            child = _ref[_i];
+            color = child.markerData.color;
+            if (!elements[color]) {
+              elements[color] = [];
+            }
+            elements[color].push('<div class="geokorp-marker" style="display: table-cell;background-color:' + color + '"></div>');
+          }
+          res = [];
+          _ref1 = _.values(elements);
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            elements = _ref1[_j];
+            res.push('<div style="display: table-row">' + elements.join(" ") + '</div>');
+          }
           return L.divIcon({
-            html: '<div><span>' + cluster.getChildCount() + '</span></div>',
-            className: 'marker-cluster marker-cluster-' + "small",
-            iconSize: new L.Point(40, 40)
+            html: '<div style="display: table">' + res.join(" ") + '</div>',
+            iconSize: new L.Point(50, 50)
           });
         };
-        scope.markerCluster = L.markerClusterGroup({
-          showOnSelector: false,
-          spiderfyOnMaxZoom: true,
-          showCoverageOnHover: false,
-          maxClusterRadius: 40,
-          iconCreateFunction: createClusterIcon
-        });
-        scope.markerCluster.on('clustermouseover', function(e) {
-          return mouseOver((_.map(e.layer.getAllChildMarkers(), function(layer) {
-            return layer.markerData;
-          })).slice(0, 5));
-        });
-        scope.markerCluster.on('clustermouseout', function(e) {
-          return mouseOut();
-        });
-        scope.markerCluster.on('mouseover', function(e) {
-          return mouseOver([e.layer.markerData]);
-        });
-        scope.markerCluster.on('mouseout', function(e) {
-          return mouseOut();
-        });
+        createMarkerCluster = function() {
+          var markerCluster;
+          markerCluster = L.markerClusterGroup({
+            showOnSelector: false,
+            spiderfyOnMaxZoom: false,
+            showCoverageOnHover: false,
+            maxClusterRadius: 40,
+            zoomToBoundsOnClick: false,
+            iconCreateFunction: createClusterIcon
+          });
+          markerCluster.on('clustermouseover', function(e) {
+            return mouseOver((_.map(e.layer.getAllChildMarkers(), function(layer) {
+              return layer.markerData;
+            })).slice(0, 4));
+          });
+          markerCluster.on('clustermouseout', function(e) {
+            return mouseOut();
+          });
+          markerCluster.on('mouseover', function(e) {
+            return mouseOver([e.layer.markerData]);
+          });
+          markerCluster.on('mouseout', function(e) {
+            return mouseOut();
+          });
+          markerCluster.on('clusterclick', function(e) {
+            var allData, elements, popup, popupMarkup;
+            allData = _.map(e.layer.getAllChildMarkers(), function(layer) {
+              return layer.markerData;
+            });
+            elements = _.map(allData, function(markerData) {
+              var queryLink;
+              queryLink = angular.element('<a class="link" style="display: block">' + markerData.point.name + '</a>');
+              queryLink.bind("click", function() {
+                return scope.markerCallback(markerData);
+              });
+              return queryLink;
+            });
+            popupMarkup = angular.element('<div></div>');
+            popupMarkup.append(elements);
+            return popup = L.popup().setLatLng(e.latlng).setContent(popupMarkup[0]).openOn(scope.map);
+          });
+          return markerCluster;
+        };
         mouseOver = function(markerData) {
           return $timeout((function() {
             return scope.$apply(function() {
-              var compiled, content, marker, msgScope, _i, _len;
+              var compiled, content, hoverInfoElem, marker, msgScope, _i, _len;
               content = [];
               for (_i = 0, _len = markerData.length; _i < _len; _i++) {
                 marker = markerData[_i];
@@ -193,8 +242,9 @@
                 compiled = $compile(scope.hoverTemplate);
                 content.push(compiled(msgScope));
               }
-              angular.element('#hover-info').empty();
-              angular.element('#hover-info').append(content);
+              hoverInfoElem = angular.element(element.find(".hover-info-container"));
+              hoverInfoElem.empty();
+              hoverInfoElem.append(content);
               return angular.element('.hover-info').css('opacity', '1');
             });
           }), 0);
@@ -202,28 +252,43 @@
         mouseOut = function() {
           return angular.element('.hover-info').css('opacity', '0');
         };
+        scope.markerCluster = createMarkerCluster();
         scope.map.addLayer(scope.markerCluster);
-        scope.$watch("markers", function(markers) {
-          var marker, markerData, marker_id, _fn, _i, _len, _ref, _results;
-          scope.markerCluster.clearLayers();
-          _ref = _.keys(markers);
-          _fn = function(markerData) {
-            return element.bind("click", function() {
-              return scope.markerCallback(markerData);
-            });
-          };
+        scope.$watchCollection("selectedGroups", function(selectedGroups) {
+          var color, marker, markerData, markerGroup, markerGroupId, marker_id, markers, popupLink, _i, _len, _results;
+          markers = scope.markers;
+          scope.markerCluster.eachLayer(function(layer) {
+            return scope.markerCluster.removeLayer(layer);
+          });
           _results = [];
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            marker_id = _ref[_i];
-            markerData = markers[marker_id];
-            marker = L.marker([markerData.lat, markerData.lng], {
-              icon: icon(markerData.color)
-            });
-            marker.markerData = markerData;
-            scope.markerCluster.addLayer(marker);
-            element = angular.element('<a class="link">' + markerData.point.name + '</a>');
-            _fn(markerData);
-            _results.push(marker.bindPopup(element[0]));
+          for (_i = 0, _len = selectedGroups.length; _i < _len; _i++) {
+            markerGroupId = selectedGroups[_i];
+            markerGroup = markers[markerGroupId];
+            color = markerGroup.color;
+            _results.push((function() {
+              var _fn, _j, _len1, _ref, _results1;
+              _ref = _.keys(markerGroup.markers);
+              _fn = function(markerData) {
+                return popupLink.bind("click", function() {
+                  return scope.markerCallback(markerData);
+                });
+              };
+              _results1 = [];
+              for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                marker_id = _ref[_j];
+                markerData = markerGroup.markers[marker_id];
+                markerData.color = color;
+                marker = L.marker([markerData.lat, markerData.lng], {
+                  icon: createMarkerIcon(color)
+                });
+                marker.markerData = markerData;
+                scope.markerCluster.addLayer(marker);
+                popupLink = angular.element('<a class="link">' + markerData.point.name + '</a>');
+                _fn(markerData);
+                _results1.push(marker.bindPopup(popupLink[0]));
+              }
+              return _results1;
+            })());
           }
           return _results;
         });
@@ -249,7 +314,8 @@
           center: '=sbCenter',
           hoverTemplate: '=sbHoverTemplate',
           baseLayer: '=sbBaseLayer',
-          markerCallback: '=sbMarkerCallback'
+          markerCallback: '=sbMarkerCallback',
+          selectedGroups: '=sbSelectedGroups'
         },
         link: link,
         templateUrl: 'template/sb_map.html'
