@@ -105,23 +105,23 @@ angular.module 'sbMap', [
   .directive  'sbMap', ['$compile', '$timeout', '$rootScope', ($compile, $timeout, $rootScope) ->
     link = (scope, element, attrs) ->
       scope.showMap = false
+      
+      scope.hoverTemplate = """<div class="hover-info">
+                                <div class="swatch" style="background-color: {{color}}"></div><div style="display: inline; font-weight: bold; font-size: 15px">{{label}}</div>
+                                <div><span>{{ 'map_name' | loc }}: </span> <span>{{point.name}}</span></div>
+                                <div><span>{{ 'map_abs_occurrences' | loc }}: </span> <span>{{point.abs}}</span></div>
+                                <div><span>{{ 'map_rel_occurrences' | loc }}: </span> <span>{{point.rel | number:2}}</span></div>
+                             </div>"""
+      
       map = angular.element (element.find ".map-container")
-      scope.map = L.map(map[0], {minZoom: 1, maxZoom: 16}).setView [51.505, -0.09], 13
+      scope.map = L.map(map[0], {minZoom: 1, maxZoom: 13}).setView [51.505, -0.09], 13
+      scope.selectedMarkers = []
 
       stamenWaterColor = L.tileLayer.provider "Stamen.Watercolor"
       openStreetMap = L.tileLayer.provider "OpenStreetMap"
 
       createMarkerIcon = (color) -> 
         return L.divIcon { html: '<div class="geokorp-marker" style="background-color:' + color + '"></div>', iconSize: new L.Point(10,10) }
-
-      shadeColor = (color, percent) ->
-          f = parseInt(color.slice(1),16)
-          t = if percent < 0 then 0 else 255 
-          p = if percent < 0 then percent*-1 else percent 
-          R = f>>16
-          G = f>>8&0x00FF
-          B = f&0x0000FF
-          return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1)
 
       createClusterIcon = (cluster) ->
           elements = {}
@@ -136,41 +136,57 @@ angular.module 'sbMap', [
               res.push '<div style="display: table-row">' + elements.join(" ") + '</div>'
           return L.divIcon { html: '<div style="display: table">' + res.join(" ") + '</div>', iconSize: new L.Point(50, 50) }
 
+      shouldZooomToBounds = (cluster) ->
+          childClusters = cluster._childClusters.slice()
+          map = cluster._group._map
+          boundsZoom = map.getBoundsZoom cluster._bounds          
+          zoom = cluster._zoom + 1
+
+          while childClusters.length > 0 && boundsZoom > zoom
+              zoom = zoom + 1
+              newClusters = []
+              for childCluster in childClusters
+                 newClusters = newClusters.concat childCluster._childClusters
+
+              childClusters = newClusters
+
+          return childClusters.length > 1
+
       createMarkerCluster = () ->
           markerCluster = L.markerClusterGroup
-              showOnSelector: false
               spiderfyOnMaxZoom: false
               showCoverageOnHover: false
-              maxClusterRadius: 40
+              maxClusterRadius: 50
               zoomToBoundsOnClick: false
               iconCreateFunction: createClusterIcon
 
           markerCluster.on 'clustermouseover', (e) ->
-              mouseOver (_.map e.layer.getAllChildMarkers(), (layer) -> layer.markerData).slice 0, 4
+              mouseOver _.map e.layer.getAllChildMarkers(), (layer) -> layer.markerData
 
           markerCluster.on 'clustermouseout', (e) ->
-              mouseOut()
+              if scope.selectedMarkers.length > 0
+                  mouseOver scope.selectedMarkers
+              else
+                  mouseOut()
+
+          markerCluster.on 'clusterclick', (e) ->
+              scope.selectedMarkers = _.map e.layer.getAllChildMarkers(), (layer) -> layer.markerData
+              mouseOver scope.selectedMarkers
+              if shouldZooomToBounds e.layer
+                  e.layer.zoomToBounds()
+
+          markerCluster.on 'click', (e) ->
+              scope.selectedMarkers = [e.layer.markerData]
+              mouseOver scope.selectedMarkers
 
           markerCluster.on 'mouseover', (e) ->
               mouseOver [e.layer.markerData]
 
           markerCluster.on 'mouseout', (e) ->
-              mouseOut()
-
-          markerCluster.on 'clusterclick', (e) ->
-              allData = _.map e.layer.getAllChildMarkers(), (layer) -> layer.markerData
-              elements = _.map allData, (markerData) -> 
-                  queryLink = angular.element '<a class="link" style="display: block">' + markerData.point.name + '</a>'
-                  queryLink.bind "click", () ->
-                      scope.markerCallback markerData
-                  return queryLink
-              popupMarkup = angular.element '<div></div>'
-              popupMarkup.append elements
-
-              popup = L.popup()
-                    .setLatLng e.latlng
-                    .setContent popupMarkup[0]
-                    .openOn scope.map
+              if scope.selectedMarkers.length > 0
+                  mouseOver scope.selectedMarkers
+              else
+                  mouseOut()
               
           return markerCluster
 
@@ -178,22 +194,35 @@ angular.module 'sbMap', [
           $timeout (() ->
               scope.$apply () ->
                   content = []
+                  sortedMarkerData = markerData.sort (markerData1, markerData2) ->
+                      return markerData2.point.rel - markerData1.point.rel
                   for marker in markerData
                         msgScope =  $rootScope.$new true
                         msgScope.point = marker.point
                         msgScope.label = marker.label
+                        msgScope.color = marker.color
                         compiled = $compile scope.hoverTemplate
-                        content.push compiled msgScope
+                        markerDiv = compiled msgScope
+                        do(marker) ->
+                            markerDiv.bind 'click', () ->
+                                scope.markerCallback marker
+                        content.push markerDiv
                   hoverInfoElem  = angular.element (element.find ".hover-info-container")
                   hoverInfoElem.empty()
                   hoverInfoElem.append content
-                  angular.element('.hover-info').css('opacity', '1')), 0
+                  hoverInfoElem[0].scrollTop = 0
+                  hoverInfoElem.css('opacity', '1')), 0
 
       mouseOut = () ->
-          angular.element('.hover-info').css('opacity','0')
+          hoverInfoElem  = angular.element (element.find ".hover-info-container")
+          hoverInfoElem.css('opacity','0')
 
       scope.markerCluster = createMarkerCluster()
       scope.map.addLayer scope.markerCluster
+
+      scope.map.on 'click', (e) ->
+          scope.selectedMarkers = []
+          mouseOut()
 
       scope.$watchCollection("selectedGroups", (selectedGroups) ->
           markers = scope.markers
@@ -211,14 +240,6 @@ angular.module 'sbMap', [
                   marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color}
                   marker.markerData = markerData
                   scope.markerCluster.addLayer marker
-
-                  popupLink = angular.element '<a class="link">' + markerData.point.name + '</a>'
-                  do(markerData) ->
-                      popupLink.bind("click", () ->
-                          scope.markerCallback markerData
-                      )
-
-                  marker.bindPopup popupLink[0]
       )
 
       if scope.baseLayer == "Stamen Watercolor"
@@ -241,7 +262,6 @@ angular.module 'sbMap', [
       scope: {
         markers: '=sbMarkers'
         center: '=sbCenter'
-        hoverTemplate: '=sbHoverTemplate'
         baseLayer: '=sbBaseLayer'
         markerCallback: '=sbMarkerCallback'
         selectedGroups: '=sbSelectedGroups'

@@ -48,24 +48,31 @@ sb-map .leaflet-bar a:link, sb-map .leaflet-bar a:visited {
   color: black;
 }
 /* line 52, ../../app/styles/geokorp.scss */
+sb-map .swatch {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  margin-right: 5px;
+}
+/* line 59, ../../app/styles/geokorp.scss */
 sb-map .marker-cluster-small {
   background-color: rgba(136, 220, 168, 0.6);
 }
-/* line 54, ../../app/styles/geokorp.scss */
+/* line 61, ../../app/styles/geokorp.scss */
 sb-map .marker-cluster-small div {
   background-color: rgba(136, 220, 168, 0.6);
 }
-/* line 59, ../../app/styles/geokorp.scss */
+/* line 66, ../../app/styles/geokorp.scss */
 sb-map .map {
   border: 1px solid black;
   position: relative;
   height: 522px;
 }
-/* line 65, ../../app/styles/geokorp.scss */
+/* line 72, ../../app/styles/geokorp.scss */
 sb-map .map-container {
   height: 520px;
 }
-/* line 69, ../../app/styles/geokorp.scss */
+/* line 76, ../../app/styles/geokorp.scss */
 sb-map .map-outer-container {
   width: 100%;
   height: 100%;
@@ -73,18 +80,22 @@ sb-map .map-outer-container {
   top: 0;
   left: 0;
 }
-/* line 77, ../../app/styles/geokorp.scss */
+/* line 84, ../../app/styles/geokorp.scss */
 sb-map .hover-info-container {
+  margin: 5px;
+  border-radius: 5px;
   width: 200px;
+  height: 500px;
+  overflow: auto;
   position: absolute;
   top: 0;
   right: 0;
   z-index: 800;
-}
-/* line 85, ../../app/styles/geokorp.scss */
-sb-map .hover-info {
   opacity: 1;
   transition: opacity 500ms;
+}
+/* line 99, ../../app/styles/geokorp.scss */
+sb-map .hover-info {
   z-index: 10;
   background-color: #f6f6f6;
   background-image: linear-gradient(to bottom, #fff, #e6e6e6);
@@ -92,4 +103,5 @@ sb-map .hover-info {
   padding: 10px;
   margin: 10px;
   border-radius: 4px;
+  cursor: pointer;
 }

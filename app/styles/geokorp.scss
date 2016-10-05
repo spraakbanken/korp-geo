@@ -49,6 +49,13 @@ sb-map {
     color: black
   }
 
+  .swatch {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    margin-right: 5px;
+  }
+
   .marker-cluster-small {
     background-color: rgba(136, 220, 168, 0.6);
     div {
@@ -75,16 +82,21 @@ sb-map {
   }
 
   .hover-info-container {
+    // background-color: rgba(255, 255,255, 0.95);
+    margin: 5px;
+    border-radius: 5px;
     width: 200px;
+    height: 500px;
+    overflow: auto; 
     position: absolute;
     top: 0;
     right: 0;
     z-index: 800;
+    opacity: 1;
+    transition : opacity 500ms;
   }
 
   .hover-info {
-    opacity: 1;
-    transition : opacity 500ms;
     z-index: 10;
     background-color: #f6f6f6;
     background-image: linear-gradient(to bottom, #fff, #e6e6e6);
@@ -92,6 +104,7 @@ sb-map {
     padding: 10px;
     margin: 10px;
     border-radius: 4px;
+    cursor: pointer;
   }
 
 }
