@@ -110,18 +110,14 @@
             }
           }
           _fn = function(name, locs) {
-            var id, lat, lng, s, _ref;
+            var id, lat, lng, _ref;
             _ref = placeResponse.data[name], lat = _ref[0], lng = _ref[1];
-            s = $rootScope.$new(true);
-            s.names = locs;
             id = name.replace(/-/g, "");
-            markers[id] = {
+            return markers[id] = {
               icon: icon,
               lat: lat,
-              lng: lng
-            };
-            return markers[id].getMessageScope = function() {
-              return s;
+              lng: lng,
+              names: locs
             };
           };
           for (name in mappedLocations) {
@@ -138,9 +134,10 @@
     '$compile', '$timeout', '$rootScope', function($compile, $timeout, $rootScope) {
       var link;
       link = function(scope, element, attrs) {
-        var baseLayers, createClusterIcon, createMarkerCluster, createMarkerIcon, map, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, stamenWaterColor;
+        var baseLayers, createClusterIcon, createFeatureLayer, createMarkerCluster, createMarkerIcon, map, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, stamenWaterColor, updateMarkerSizes;
+        scope.useClustering = angular.isDefined(scope.useClustering) ? scope.useClustering : true;
         scope.showMap = false;
-        scope.hoverTemplate = "<div class=\"hover-info\">\n   <div class=\"swatch\" style=\"background-color: {{color}}\"></div><div style=\"display: inline; font-weight: bold; font-size: 15px\">{{label}}</div>\n   <div><span>{{ 'map_name' | loc }}: </span> <span>{{point.name}}</span></div>\n   <div><span>{{ 'map_abs_occurrences' | loc }}: </span> <span>{{point.abs}}</span></div>\n   <div><span>{{ 'map_rel_occurrences' | loc }}: </span> <span>{{point.rel | number:2}}</span></div>\n</div>";
+        scope.hoverTemplate = "<div class=\"hover-info\">\n   <div ng-if=\"showLabel\" class=\"swatch\" style=\"background-color: {{color}}\"></div><div ng-if=\"showLabel\" style=\"display: inline; font-weight: bold; font-size: 15px\">{{label}}</div>\n   <div><span>{{ 'map_name' | loc }}: </span> <span>{{point.name}}</span></div>\n   <div><span>{{ 'map_abs_occurrences' | loc }}: </span> <span>{{point.abs}}</span></div>\n   <div><span>{{ 'map_rel_occurrences' | loc }}: </span> <span>{{point.rel | number:2}}</span></div>\n</div>";
         map = angular.element(element.find(".map-container"));
         scope.map = L.map(map[0], {
           minZoom: 1,
@@ -156,25 +153,28 @@
           });
         };
         createClusterIcon = function(cluster) {
-          var child, color, elements, res, _i, _j, _len, _len1, _ref, _ref1;
-          elements = {};
+          var child, color, divWidth, elements, groupSize, rel, sizes, _i, _j, _len, _len1, _ref, _ref1;
+          sizes = {};
           _ref = cluster.getAllChildMarkers();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             child = _ref[_i];
             color = child.markerData.color;
-            if (!elements[color]) {
-              elements[color] = [];
+            if (!sizes[color]) {
+              sizes[color] = 0;
             }
-            elements[color].push('<div class="geokorp-marker" style="display: table-cell;background-color:' + color + '"></div>');
+            rel = child.markerData.point.rel;
+            sizes[color] = sizes[color] + rel;
           }
-          res = [];
-          _ref1 = _.values(elements);
+          elements = "";
+          _ref1 = _.keys(sizes);
           for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            elements = _ref1[_j];
-            res.push('<div style="display: table-row">' + elements.join(" ") + '</div>');
+            color = _ref1[_j];
+            groupSize = sizes[color];
+            divWidth = ((groupSize / scope.maxRel) * 45) + 5;
+            elements = elements + '<div class="cluster-geokorp-marker" style="height:' + divWidth + 'px;background-color:' + color + '"></div>';
           }
           return L.divIcon({
-            html: '<div style="display: table">' + res.join(" ") + '</div>',
+            html: '<div style="width:50px">' + elements + '</div>',
             iconSize: new L.Point(50, 50)
           });
         };
@@ -195,12 +195,65 @@
           }
           return childClusters.length > 1;
         };
+        updateMarkerSizes = function() {
+          var bounds;
+          bounds = scope.map.getBounds();
+          scope.maxRel = 0;
+          if (scope.useClustering && scope.markerCluster) {
+            scope.map.eachLayer(function(layer) {
+              var child, color, sumRel, sumRels, _i, _j, _len, _len1, _ref, _ref1, _results;
+              if (layer.getChildCount) {
+                sumRels = {};
+                _ref = layer.getAllChildMarkers();
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                  child = _ref[_i];
+                  color = child.markerData.color;
+                  if (!sumRels[color]) {
+                    sumRels[color] = 0;
+                  }
+                  sumRels[color] = sumRels[color] + child.markerData.point.rel;
+                }
+                _ref1 = _.values(sumRels);
+                _results = [];
+                for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+                  sumRel = _ref1[_j];
+                  if (sumRel > scope.maxRel) {
+                    _results.push(scope.maxRel = sumRel);
+                  } else {
+                    _results.push(void 0);
+                  }
+                }
+                return _results;
+              }
+            });
+            return scope.markerCluster.refreshClusters();
+          }
+        };
+        createFeatureLayer = function() {
+          var featureLayer;
+          featureLayer = L.featureGroup();
+          featureLayer.on('click', function(e) {
+            scope.selectedMarkers = [e.layer.markerData];
+            return mouseOver(scope.selectedMarkers);
+          });
+          featureLayer.on('mouseover', function(e) {
+            return mouseOver([e.layer.markerData]);
+          });
+          featureLayer.on('mouseout', function(e) {
+            if (scope.selectedMarkers.length > 0) {
+              return mouseOver(scope.selectedMarkers);
+            } else {
+              return mouseOut();
+            }
+          });
+          return featureLayer;
+        };
         createMarkerCluster = function() {
           var markerCluster;
           markerCluster = L.markerClusterGroup({
             spiderfyOnMaxZoom: false,
             showCoverageOnHover: false,
-            maxClusterRadius: 50,
+            maxClusterRadius: 40,
             zoomToBoundsOnClick: false,
             iconCreateFunction: createClusterIcon
           });
@@ -239,24 +292,50 @@
               return mouseOut();
             }
           });
+          markerCluster.on('animationend', function(e) {
+            return updateMarkerSizes();
+          });
           return markerCluster;
         };
         mouseOver = function(markerData) {
           return $timeout((function() {
             return scope.$apply(function() {
-              var compiled, content, hoverInfoElem, marker, markerDiv, msgScope, sortedMarkerData, _fn, _i, _len;
+              var compiled, content, hoverInfoElem, marker, markerDiv, msgScope, name, selectedMarkers, sortedMarkerData, _fn, _i, _len;
               content = [];
-              sortedMarkerData = markerData.sort(function(markerData1, markerData2) {
-                return markerData2.point.rel - markerData1.point.rel;
-              });
+              if (scope.useClustering) {
+                sortedMarkerData = markerData.sort(function(markerData1, markerData2) {
+                  return markerData2.point.rel - markerData1.point.rel;
+                });
+                selectedMarkers = markerData;
+              } else {
+                selectedMarkers = (function() {
+                  var _i, _len, _ref, _results;
+                  _ref = _.keys(markerData[0].names);
+                  _results = [];
+                  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                    name = _ref[_i];
+                    _results.push({
+                      color: markerData[0].color,
+                      searchCqp: markerData[0].searchCqp,
+                      point: {
+                        name: name,
+                        abs: markerData[0].names[name].abs_occurrences,
+                        rel: markerData[0].names[name].rel_occurrences
+                      }
+                    });
+                  }
+                  return _results;
+                })();
+              }
               _fn = function(marker) {
                 return markerDiv.bind('click', function() {
                   return scope.markerCallback(marker);
                 });
               };
-              for (_i = 0, _len = markerData.length; _i < _len; _i++) {
-                marker = markerData[_i];
+              for (_i = 0, _len = selectedMarkers.length; _i < _len; _i++) {
+                marker = selectedMarkers[_i];
                 msgScope = $rootScope.$new(true);
+                msgScope.showLabel = scope.useClustering;
                 msgScope.point = marker.point;
                 msgScope.label = marker.label;
                 msgScope.color = marker.color;
@@ -278,41 +357,47 @@
           hoverInfoElem = angular.element(element.find(".hover-info-container"));
           return hoverInfoElem.css('opacity', '0');
         };
-        scope.markerCluster = createMarkerCluster();
-        scope.map.addLayer(scope.markerCluster);
         scope.map.on('click', function(e) {
           scope.selectedMarkers = [];
           return mouseOut();
         });
         scope.$watchCollection("selectedGroups", function(selectedGroups) {
-          var color, marker, markerData, markerGroup, markerGroupId, marker_id, markers, _i, _len, _results;
+          var color, marker, markerData, markerGroup, markerGroupId, marker_id, markers, _i, _j, _len, _len1, _ref;
           markers = scope.markers;
-          scope.markerCluster.eachLayer(function(layer) {
-            return scope.markerCluster.removeLayer(layer);
-          });
-          _results = [];
+          if (scope.markerCluster) {
+            scope.map.removeLayer(scope.markerCluster);
+          } else if (scope.featureLayer) {
+            scope.map.removeLayer(scope.featureLayer);
+          }
+          if (scope.useClustering) {
+            scope.markerCluster = createMarkerCluster();
+            scope.map.addLayer(scope.markerCluster);
+          } else {
+            scope.featureLayer = createFeatureLayer();
+            scope.map.addLayer(scope.featureLayer);
+          }
           for (_i = 0, _len = selectedGroups.length; _i < _len; _i++) {
             markerGroupId = selectedGroups[_i];
             markerGroup = markers[markerGroupId];
             color = markerGroup.color;
-            _results.push((function() {
-              var _j, _len1, _ref, _results1;
-              _ref = _.keys(markerGroup.markers);
-              _results1 = [];
-              for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-                marker_id = _ref[_j];
-                markerData = markerGroup.markers[marker_id];
-                markerData.color = color;
-                marker = L.marker([markerData.lat, markerData.lng], {
-                  icon: createMarkerIcon(color)
-                });
-                marker.markerData = markerData;
-                _results1.push(scope.markerCluster.addLayer(marker));
+            scope.maxRel = 0;
+            _ref = _.keys(markerGroup.markers);
+            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+              marker_id = _ref[_j];
+              markerData = markerGroup.markers[marker_id];
+              markerData.color = color;
+              marker = L.marker([markerData.lat, markerData.lng], {
+                icon: createMarkerIcon(color)
+              });
+              marker.markerData = markerData;
+              if (scope.useClustering) {
+                scope.markerCluster.addLayer(marker);
+              } else {
+                scope.featureLayer.addLayer(marker);
               }
-              return _results1;
-            })());
+            }
           }
-          return _results;
+          return updateMarkerSizes();
         });
         if (scope.baseLayer === "Stamen Watercolor") {
           stamenWaterColor.addTo(scope.map);
@@ -336,7 +421,8 @@
           center: '=sbCenter',
           baseLayer: '=sbBaseLayer',
           markerCallback: '=sbMarkerCallback',
-          selectedGroups: '=sbSelectedGroups'
+          selectedGroups: '=sbSelectedGroups',
+          useClustering: '=?sbUseClustering'
         },
         link: link,
         templateUrl: 'template/sb_map.html'
