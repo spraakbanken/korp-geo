@@ -134,7 +134,7 @@
     '$compile', '$timeout', '$rootScope', function($compile, $timeout, $rootScope) {
       var link;
       link = function(scope, element, attrs) {
-        var baseLayers, createClusterIcon, createFeatureLayer, createMarkerCluster, createMarkerIcon, map, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, stamenWaterColor, updateMarkerSizes;
+        var baseLayers, createCircleMarker, createClusterIcon, createFeatureLayer, createMarkerCluster, createMarkerIcon, map, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, stamenWaterColor, updateMarkerSizes;
         scope.useClustering = angular.isDefined(scope.useClustering) ? scope.useClustering : true;
         scope.showMap = false;
         scope.hoverTemplate = "<div class=\"hover-info\">\n   <div ng-if=\"showLabel\" class=\"swatch\" style=\"background-color: {{color}}\"></div><div ng-if=\"showLabel\" style=\"display: inline; font-weight: bold; font-size: 15px\">{{label}}</div>\n   <div><span>{{ 'map_name' | loc }}: </span> <span>{{point.name}}</span></div>\n   <div><span>{{ 'map_abs_occurrences' | loc }}: </span> <span>{{point.abs}}</span></div>\n   <div><span>{{ 'map_rel_occurrences' | loc }}: </span> <span>{{point.rel | number:2}}</span></div>\n</div>";
@@ -146,37 +146,62 @@
         scope.selectedMarkers = [];
         stamenWaterColor = L.tileLayer.provider("Stamen.Watercolor");
         openStreetMap = L.tileLayer.provider("OpenStreetMap");
-        createMarkerIcon = function(color) {
+        createCircleMarker = function(color, diameter) {
           return L.divIcon({
-            html: '<div class="geokorp-marker" style="background-color:' + color + '"></div>',
-            iconSize: new L.Point(10, 10)
+            html: '<div class="geokorp-marker" style="border-radius:' + diameter + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>',
+            iconSize: new L.Point(diameter, diameter)
           });
         };
-        createClusterIcon = function(cluster) {
-          var child, color, divWidth, elements, groupSize, rel, sizes, _i, _j, _len, _len1, _ref, _ref1;
-          sizes = {};
-          _ref = cluster.getAllChildMarkers();
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            child = _ref[_i];
-            color = child.markerData.color;
-            if (!sizes[color]) {
-              sizes[color] = 0;
-            }
-            rel = child.markerData.point.rel;
-            sizes[color] = sizes[color] + rel;
-          }
-          elements = "";
-          _ref1 = _.keys(sizes);
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            color = _ref1[_j];
-            groupSize = sizes[color];
-            divWidth = ((groupSize / scope.maxRel) * 45) + 5;
-            elements = elements + '<div class="cluster-geokorp-marker" style="height:' + divWidth + 'px;background-color:' + color + '"></div>';
-          }
-          return L.divIcon({
-            html: '<div style="width:50px">' + elements + '</div>',
-            iconSize: new L.Point(50, 50)
+        createMarkerIcon = function(color, relSize) {
+          return createCircleMarker(color, 10);
+        };
+        createClusterIcon = function(clusterGroups, restColor) {
+          var allGroups, visibleGroups;
+          allGroups = _.keys(clusterGroups);
+          visibleGroups = allGroups.sort(function(group1, group2) {
+            return clusterGroups[group1].order - clusterGroups[group2].order;
           });
+          if (allGroups.length > 4) {
+            visibleGroups = visibleGroups.splice(0, 3);
+            visibleGroups.push(restColor);
+          }
+          return function(cluster) {
+            var child, color, diameter, divWidth, elements, group, groupSize, rel, sizes, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
+            sizes = {};
+            for (_i = 0, _len = visibleGroups.length; _i < _len; _i++) {
+              group = visibleGroups[_i];
+              sizes[group] = 0;
+            }
+            _ref = cluster.getAllChildMarkers();
+            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+              child = _ref[_j];
+              color = child.markerData.color;
+              if (!(color in sizes)) {
+                color = restColor;
+              }
+              rel = child.markerData.point.rel;
+              sizes[color] = sizes[color] + rel;
+            }
+            if (allGroups.length === 1) {
+              color = _.keys(sizes)[0];
+              groupSize = sizes[color];
+              diameter = ((groupSize / scope.maxRel) * 45) + 5;
+              return createCircleMarker(color, diameter);
+            } else {
+              elements = "";
+              _ref1 = _.keys(sizes);
+              for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+                color = _ref1[_k];
+                groupSize = sizes[color];
+                divWidth = ((groupSize / scope.maxRel) * 45) + 5;
+                elements = elements + '<div class="cluster-geokorp-marker" style="height:' + divWidth + 'px;background-color:' + color + '"></div>';
+              }
+              return L.divIcon({
+                html: '<div class="cluster-geokorp-marker-group">' + elements + '</div>',
+                iconSize: new L.Point(40, 50)
+              });
+            }
+          };
         };
         shouldZooomToBounds = function(cluster) {
           var boundsZoom, childCluster, childClusters, newClusters, zoom, _i, _len;
@@ -201,7 +226,7 @@
           scope.maxRel = 0;
           if (scope.useClustering && scope.markerCluster) {
             scope.map.eachLayer(function(layer) {
-              var child, color, sumRel, sumRels, _i, _j, _len, _len1, _ref, _ref1, _results;
+              var child, color, rel, sumRel, sumRels, _i, _j, _len, _len1, _ref, _ref1, _results;
               if (layer.getChildCount) {
                 sumRels = {};
                 _ref = layer.getAllChildMarkers();
@@ -224,6 +249,11 @@
                   }
                 }
                 return _results;
+              } else if (layer.markerData) {
+                rel = layer.markerData.point.rel;
+                if (rel > scope.maxRel) {
+                  return scope.maxRel = rel;
+                }
               }
             });
             return scope.markerCluster.refreshClusters();
@@ -248,14 +278,14 @@
           });
           return featureLayer;
         };
-        createMarkerCluster = function() {
+        createMarkerCluster = function(clusterGroups, restColor) {
           var markerCluster;
           markerCluster = L.markerClusterGroup({
             spiderfyOnMaxZoom: false,
             showCoverageOnHover: false,
             maxClusterRadius: 40,
             zoomToBoundsOnClick: false,
-            iconCreateFunction: createClusterIcon
+            iconCreateFunction: createClusterIcon(clusterGroups, restColor)
           });
           markerCluster.on('clustermouseover', function(e) {
             return mouseOver(_.map(e.layer.getAllChildMarkers(), function(layer) {
@@ -357,12 +387,13 @@
           hoverInfoElem = angular.element(element.find(".hover-info-container"));
           return hoverInfoElem.css('opacity', '0');
         };
+        scope.showHoverInfo = false;
         scope.map.on('click', function(e) {
           scope.selectedMarkers = [];
           return mouseOut();
         });
         scope.$watchCollection("selectedGroups", function(selectedGroups) {
-          var color, marker, markerData, markerGroup, markerGroupId, marker_id, markers, _i, _j, _len, _len1, _ref;
+          var clusterGroups, color, group, groupData, marker, markerData, markerGroup, markerGroupId, marker_id, markers, _i, _j, _k, _len, _len1, _len2, _ref;
           markers = scope.markers;
           if (scope.markerCluster) {
             scope.map.removeLayer(scope.markerCluster);
@@ -370,24 +401,32 @@
             scope.map.removeLayer(scope.featureLayer);
           }
           if (scope.useClustering) {
-            scope.markerCluster = createMarkerCluster();
+            clusterGroups = {};
+            for (_i = 0, _len = selectedGroups.length; _i < _len; _i++) {
+              group = selectedGroups[_i];
+              groupData = markers[group];
+              clusterGroups[groupData.color] = {
+                order: groupData.order
+              };
+            }
+            scope.markerCluster = createMarkerCluster(clusterGroups, scope.restColor);
             scope.map.addLayer(scope.markerCluster);
           } else {
             scope.featureLayer = createFeatureLayer();
             scope.map.addLayer(scope.featureLayer);
           }
-          for (_i = 0, _len = selectedGroups.length; _i < _len; _i++) {
-            markerGroupId = selectedGroups[_i];
+          for (_j = 0, _len1 = selectedGroups.length; _j < _len1; _j++) {
+            markerGroupId = selectedGroups[_j];
             markerGroup = markers[markerGroupId];
             color = markerGroup.color;
             scope.maxRel = 0;
             _ref = _.keys(markerGroup.markers);
-            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-              marker_id = _ref[_j];
+            for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
+              marker_id = _ref[_k];
               markerData = markerGroup.markers[marker_id];
               markerData.color = color;
               marker = L.marker([markerData.lat, markerData.lng], {
-                icon: createMarkerIcon(color)
+                icon: createMarkerIcon(color, markerData.point.rel)
               });
               marker.markerData = markerData;
               if (scope.useClustering) {
@@ -422,7 +461,8 @@
           baseLayer: '=sbBaseLayer',
           markerCallback: '=sbMarkerCallback',
           selectedGroups: '=sbSelectedGroups',
-          useClustering: '=?sbUseClustering'
+          useClustering: '=?sbUseClustering',
+          restColor: '=?sbRestColor'
         },
         link: link,
         templateUrl: 'template/sb_map.html'

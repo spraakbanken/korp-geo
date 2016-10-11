@@ -119,36 +119,55 @@ angular.module 'sbMap', [
       stamenWaterColor = L.tileLayer.provider "Stamen.Watercolor"
       openStreetMap = L.tileLayer.provider "OpenStreetMap"
 
-      # TODO sizes of the single markers should follow same rules as cluster markers
-      createMarkerIcon = (color) -> 
-        return L.divIcon { html: '<div class="geokorp-marker" style="background-color:' + color + '"></div>', iconSize: new L.Point(10,10) }
+      createCircleMarker = (color, diameter) ->
+          return L.divIcon 
+              html: '<div class="geokorp-marker" style="border-radius:' + diameter + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>'
+              iconSize: new L.Point diameter, diameter
+
+      createMarkerIcon = (color, relSize) ->
+        # TODO use scope.maxRel, but scope.maxRel is not set when markers are created
+        # diameter = ((relSize / scope.maxRel) * 45) + 5
+        return createCircleMarker color, 10
 
       # use the previously calculated "scope.maxRel" to decide the sizes of the bars
       # in the cluster icon that is returned (between 5px and 50px)
-      createClusterIcon = (cluster) ->
-          sizes = {}
-          for child in cluster.getAllChildMarkers()
-              color = child.markerData.color
-              if not sizes[color]
-                  sizes[color] = 0
-              rel = child.markerData.point.rel
-              sizes[color] = sizes[color] + rel
+      createClusterIcon = (clusterGroups, restColor) ->
+          allGroups = _.keys clusterGroups
+          visibleGroups = allGroups.sort((group1, group2) ->
+              return clusterGroups[group1].order - clusterGroups[group2].order)
 
-          elements = ""
-          for color in _.keys sizes
-              groupSize = sizes[color]
-              
-            #   if scope.maxRel isnt 0 and groupSize > scope.maxRel
-            #       updateMarkerSizes()
+          if allGroups.length > 4
+              visibleGroups = visibleGroups.splice(0,3)
+              visibleGroups.push restColor
 
-              divWidth = ((groupSize / scope.maxRel) * 45) + 5
-              elements = elements  + '<div class="cluster-geokorp-marker" style="height:' + divWidth + 'px;background-color:' + color + '"></div>'
+          (cluster) ->
+              sizes = {}
+              for group in visibleGroups
+                  sizes[group] = 0
+              for child in cluster.getAllChildMarkers()
+                  color = child.markerData.color
+                  if color not of sizes
+                      color = restColor
+                  rel = child.markerData.point.rel
+                  sizes[color] = sizes[color] + rel
 
-          return L.divIcon { html: '<div style="width:50px">' + elements + '</div>', iconSize: new L.Point(50, 50) }
+              if allGroups.length == 1
+                  color = _.keys(sizes)[0]
+                  groupSize = sizes[color]
+                  diameter = ((groupSize / scope.maxRel) * 45) + 5
+                  return createCircleMarker color, diameter
+              else
+                  elements = ""
+                  for color in _.keys sizes
+                      groupSize = sizes[color]
+                      divWidth = ((groupSize / scope.maxRel) * 45) + 5
+                      elements = elements  + '<div class="cluster-geokorp-marker" style="height:' + divWidth + 'px;background-color:' + color + '"></div>'
+
+                  return L.divIcon { html: '<div class="cluster-geokorp-marker-group">' + elements + '</div>', iconSize: new L.Point(40, 50) }
 
       # check if the cluster with split into several clusters / markers
       # on zooom
-      # TODO: does not work in some cases, usually in high zoom leves
+      # TODO: does not work in some cases
       shouldZooomToBounds = (cluster) ->
           childClusters = cluster._childClusters.slice()
           map = cluster._group._map
@@ -168,6 +187,7 @@ angular.module 'sbMap', [
       # check all current clusters and sum up the sizes of its childen
       # this is the max relative value of any cluster and can be used to 
       # calculate marker sizes
+      # TODO this needs to use the "rest" group when doing calcuations!!
       updateMarkerSizes = () ->
           bounds = scope.map.getBounds()
           scope.maxRel = 0
@@ -183,7 +203,12 @@ angular.module 'sbMap', [
                       for sumRel in _.values sumRels
                           if sumRel > scope.maxRel
                               scope.maxRel = sumRel
+                  else if layer.markerData
+                      rel = layer.markerData.point.rel
+                      if rel > scope.maxRel
+                          scope.maxRel = rel
               scope.markerCluster.refreshClusters()
+              # TODO when scope.maxRel is set, we should redraw all non-cluster markers using this
 
       # create normal layer (and all listeners) to be used when clustering is not enabled
       createFeatureLayer = () ->
@@ -203,13 +228,13 @@ angular.module 'sbMap', [
           return featureLayer
 
       # create marker cluster layer and all listeners
-      createMarkerCluster = () ->
+      createMarkerCluster = (clusterGroups, restColor) ->
           markerCluster = L.markerClusterGroup
               spiderfyOnMaxZoom: false
               showCoverageOnHover: false
               maxClusterRadius: 40
               zoomToBoundsOnClick: false
-              iconCreateFunction: createClusterIcon
+              iconCreateFunction: createClusterIcon clusterGroups, restColor
 
           markerCluster.on 'clustermouseover', (e) ->
               mouseOver _.map e.layer.getAllChildMarkers(), (layer) -> layer.markerData
@@ -285,6 +310,7 @@ angular.module 'sbMap', [
           hoverInfoElem  = angular.element (element.find ".hover-info-container")
           hoverInfoElem.css('opacity','0')
 
+      scope.showHoverInfo = false
       scope.map.on 'click', (e) ->
           scope.selectedMarkers = []
           mouseOut()
@@ -296,9 +322,14 @@ angular.module 'sbMap', [
               scope.map.removeLayer scope.markerCluster
           else if scope.featureLayer
               scope.map.removeLayer scope.featureLayer
-              
+
           if scope.useClustering
-              scope.markerCluster = createMarkerCluster()
+              clusterGroups = {}
+              for group in selectedGroups
+                  groupData = markers[group]
+                  clusterGroups[groupData.color] =
+                      order: groupData.order
+              scope.markerCluster = createMarkerCluster clusterGroups, scope.restColor
               scope.map.addLayer scope.markerCluster
           else
               scope.featureLayer = createFeatureLayer()
@@ -311,7 +342,7 @@ angular.module 'sbMap', [
               for marker_id in _.keys markerGroup.markers
                   markerData = markerGroup.markers[marker_id]
                   markerData.color = color
-                  marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color}
+                  marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color, markerData.point.rel}
                   marker.markerData = markerData
 
                   if scope.useClustering
@@ -345,6 +376,7 @@ angular.module 'sbMap', [
         markerCallback: '=sbMarkerCallback'
         selectedGroups: '=sbSelectedGroups'
         useClustering: '=?sbUseClustering'
+        restColor: '=?sbRestColor' # free color to use for grouping etc
       },
       link: link,
       templateUrl: 'template/sb_map.html'
