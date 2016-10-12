@@ -129,6 +129,60 @@ angular.module 'sbMap', [
         # diameter = ((relSize / scope.maxRel) * 45) + 5
         return createCircleMarker color, 10
 
+      createMultiMarkerIcon = (markerData) ->
+        elements = for marker in markerData
+            color = marker.color
+            diameter = ((marker.point.rel / scope.maxRel) * 40) + 10
+            [diameter, '<div class="geokorp-multi-marker" style="border-radius:' + diameter + 'px;height:' + diameter + 'px;width:' + diameter + 'px;background-color:' + color + '"></div>']
+        elements.sort (element1, element2) ->
+            return element1[0] - element2[0]
+
+        gridSize = (Math.ceil Math.sqrt elements.length) + 1
+        gridSize = if gridSize % 2 == 0 then gridSize + 1 else gridSize
+        center = Math.floor gridSize / 2
+
+        grid = for x in [0..gridSize]
+            row = for y in [0..gridSize]
+                []
+            row
+
+        id = (x) -> x
+        neg = (x) -> -x
+        for idx in [0..center]
+            x = -1
+            y = -1
+            xOp = neg
+            yOp = neg
+            stop = if idx == 0 then 0 else idx * 4 - 1
+            for something in [0..stop]
+                if x == -1
+                    x = center + idx
+                else
+                    x = x + xOp 1
+                
+                if y == -1
+                    y = center
+                else
+                    y = y + yOp 1
+                
+                if x == center - idx
+                    xOp = id
+                if y == center - idx
+                    yOp = id
+                    
+                if x == center + idx
+                    xOp = neg
+                if y == center + idx
+                    yOp = neg
+                
+                grid[x][y] = elements.pop()?[1]
+
+        grid = for row in grid
+            row = _.filter row, (elem) -> elem
+            '<div style="text-align: center;">' + row.join('') + '</div>'
+
+        return L.divIcon html: grid.join(''), iconSize: new L.Point 50, 50
+
       # use the previously calculated "scope.maxRel" to decide the sizes of the bars
       # in the cluster icon that is returned (between 5px and 50px)
       createClusterIcon = (clusterGroups, restColor) ->
@@ -214,11 +268,17 @@ angular.module 'sbMap', [
       createFeatureLayer = () ->
           featureLayer = L.featureGroup()
           featureLayer.on 'click', (e) ->
-              scope.selectedMarkers = [e.layer.markerData]
+              if e.layer.markerData instanceof Array
+                  scope.selectedMarkers = e.layer.markerData
+              else
+                  scope.selectedMarkers = [e.layer.markerData]
               mouseOver scope.selectedMarkers
 
           featureLayer.on 'mouseover', (e) ->
-              mouseOver [e.layer.markerData]
+              if e.layer.markerData instanceof Array
+                  mouseOver e.layer.markerData
+              else
+                  mouseOver [e.layer.markerData]
 
           featureLayer.on 'mouseout', (e) ->
               if scope.selectedMarkers.length > 0
@@ -275,11 +335,10 @@ angular.module 'sbMap', [
               scope.$apply () ->
                   content = []
 
-                  if scope.useClustering
-                      sortedMarkerData = markerData.sort (markerData1, markerData2) ->
-                          return markerData2.point.rel - markerData1.point.rel
-                      selectedMarkers = markerData
-                  else
+                  # support for "old" map
+                  oldMap = false
+                  if markerData[0].names
+                      oldMap = true
                       selectedMarkers = for name in _.keys markerData[0].names
                           color: markerData[0].color
                           searchCqp: markerData[0].searchCqp
@@ -287,10 +346,14 @@ angular.module 'sbMap', [
                               name: name
                               abs: markerData[0].names[name].abs_occurrences
                               rel: markerData[0].names[name].rel_occurrences
+                  else
+                      markerData.sort (markerData1, markerData2) ->
+                          return markerData2.point.rel - markerData1.point.rel
+                      selectedMarkers = markerData
 
                   for marker in selectedMarkers
                         msgScope =  $rootScope.$new true
-                        msgScope.showLabel = scope.useClustering
+                        msgScope.showLabel = not oldMap
                         msgScope.point = marker.point
                         msgScope.label = marker.label
                         msgScope.color = marker.color
@@ -316,11 +379,19 @@ angular.module 'sbMap', [
           mouseOut()
 
       scope.$watchCollection "selectedGroups", (selectedGroups) ->
+          updateMarkers()
+
+      scope.$watch 'useClustering', (newVal, oldVal) ->
+          if newVal is not oldVal
+              updateMarkers()
+
+      updateMarkers = () ->
+          selectedGroups = scope.selectedGroups
           markers = scope.markers
           
           if scope.markerCluster
               scope.map.removeLayer scope.markerCluster
-          else if scope.featureLayer
+          if scope.featureLayer
               scope.map.removeLayer scope.featureLayer
 
           if scope.useClustering
@@ -335,22 +406,49 @@ angular.module 'sbMap', [
               scope.featureLayer = createFeatureLayer()
               scope.map.addLayer scope.featureLayer
 
-          for markerGroupId in selectedGroups
-              markerGroup = markers[markerGroupId]
-              color = markerGroup.color
-              scope.maxRel = 0
-              for marker_id in _.keys markerGroup.markers
-                  markerData = markerGroup.markers[marker_id]
-                  markerData.color = color
-                  marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color, markerData.point.rel}
-                  marker.markerData = markerData
+          oldMap = false # TODO use real value
+          if scope.useClustering or oldMap
+              for markerGroupId in selectedGroups
+                  markerGroup = markers[markerGroupId]
+                  color = markerGroup.color
+                  scope.maxRel = 0
+                  for marker_id in _.keys markerGroup.markers
+                      markerData = markerGroup.markers[marker_id]
+                      markerData.color = color
+                      marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color, markerData.point.rel}
+                      marker.markerData = markerData
 
-                  if scope.useClustering
-                      scope.markerCluster.addLayer marker
-                  else
-                      scope.featureLayer.addLayer marker
+                      if scope.useClustering
+                          scope.markerCluster.addLayer marker
+                      else
+                          scope.featureLayer.addLayer marker
+          else
+              # TOOD markers need to be updated to only selected
+              for markerData in mergeMarkers _.values markers
+                  marker = L.marker [markerData.lat, markerData.lng], {icon: createMultiMarkerIcon markerData.markerData}
+                  marker.markerData = markerData.markerData
+                  scope.featureLayer.addLayer marker
 
           updateMarkerSizes()
+
+      # merge lists of markers into one list with several hits in one marker
+      # also calculate maxRel
+      mergeMarkers = (markerLists) ->
+          scope.maxRel = 0
+          val = _.reduce markerLists, ((memo, val) ->
+                for markerId, markerData of val.markers
+                    latLng = markerData.lat + ',' + markerData.lng
+                    if markerData.point.rel > scope.maxRel
+                        scope.maxRel = markerData.point.rel
+                    if latLng of memo
+                        memo[latLng].markerData.push markerData
+                    else
+                        memo[latLng] = markerData: [markerData]
+                        memo[latLng].lat = markerData.lat
+                        memo[latLng].lng = markerData.lng
+                return memo
+          ), {}
+          return _.values val
 
       if scope.baseLayer == "Stamen Watercolor"
           stamenWaterColor.addTo scope.map
