@@ -505,14 +505,16 @@
               hoverInfoElem.empty();
               hoverInfoElem.append(content);
               hoverInfoElem[0].scrollTop = 0;
-              return hoverInfoElem.css('opacity', '1');
+              hoverInfoElem.css('opacity', '1');
+              return hoverInfoElem.css('display', 'block');
             });
           }), 0);
         };
         mouseOut = function() {
           var hoverInfoElem;
           hoverInfoElem = angular.element(element.find(".hover-info-container"));
-          return hoverInfoElem.css('opacity', '0');
+          hoverInfoElem.css('opacity', '0');
+          return hoverInfoElem.css('display', 'none');
         };
         scope.showHoverInfo = false;
         scope.map.on('click', function(e) {

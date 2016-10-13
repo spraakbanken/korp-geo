@@ -388,11 +388,13 @@ angular.module 'sbMap', [
                   hoverInfoElem.empty()
                   hoverInfoElem.append content
                   hoverInfoElem[0].scrollTop = 0
-                  hoverInfoElem.css('opacity', '1')), 0
+                  hoverInfoElem.css('opacity', '1')
+                  hoverInfoElem.css('display', 'block')), 0
 
       mouseOut = () ->
           hoverInfoElem  = angular.element (element.find ".hover-info-container")
           hoverInfoElem.css('opacity','0')
+          hoverInfoElem.css('display','none')
 
       scope.showHoverInfo = false
       scope.map.on 'click', (e) ->
