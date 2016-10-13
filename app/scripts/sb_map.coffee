@@ -460,6 +460,7 @@ angular.module 'sbMap', [
           scope.maxRel = 0
           val = _.reduce markerLists, ((memo, val) ->
                 for markerId, markerData of val.markers
+                    markerData.color = val.color
                     latLng = markerData.lat + ',' + markerData.lng
                     if markerData.point.rel > scope.maxRel
                         scope.maxRel = markerData.point.rel

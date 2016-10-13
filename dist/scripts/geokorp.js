@@ -606,6 +606,7 @@
             _ref = val.markers;
             for (markerId in _ref) {
               markerData = _ref[markerId];
+              markerData.color = val.color;
               latLng = markerData.lat + ',' + markerData.lng;
               if (markerData.point.rel > scope.maxRel) {
                 scope.maxRel = markerData.point.rel;
