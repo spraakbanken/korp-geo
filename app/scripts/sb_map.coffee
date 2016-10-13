@@ -120,15 +120,15 @@ angular.module 'sbMap', [
       stamenWaterColor = L.tileLayer.provider "Stamen.Watercolor"
       openStreetMap = L.tileLayer.provider "OpenStreetMap"
 
-      createCircleMarker = (color, diameter) ->
+      createCircleMarker = (color, diameter, borderRadius) ->
           return L.divIcon 
-              html: '<div class="geokorp-marker" style="border-radius:' + diameter + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>'
+              html: '<div class="geokorp-marker" style="border-radius:' + borderRadius + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>'
               iconSize: new L.Point diameter, diameter
 
-      createMarkerIcon = (color) ->
+      createMarkerIcon = (color, cluster) ->
         # TODO use scope.maxRel, but scope.maxRel is not set when markers are created
         # diameter = ((relSize / scope.maxRel) * 45) + 5
-        return createCircleMarker color, 10
+        return createCircleMarker color, 10, if cluster then 1 else 5
 
       createMultiMarkerIcon = (markerData) ->
         elements = for marker in markerData
@@ -210,7 +210,7 @@ angular.module 'sbMap', [
                   color = _.keys(sizes)[0]
                   groupSize = sizes[color]
                   diameter = ((groupSize / scope.maxRel) * 45) + 5
-                  return createCircleMarker color, diameter
+                  return createCircleMarker color, diameter, diameter
               else
                   elements = ""
                   for color in _.keys sizes
@@ -415,7 +415,7 @@ angular.module 'sbMap', [
                   for marker_id in _.keys markerGroup.markers
                       markerData = markerGroup.markers[marker_id]
                       markerData.color = color
-                      marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color}
+                      marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color, not scope.oldMap and selectedGroups.length != 1}
                       marker.markerData = markerData
 
                       if scope.useClustering

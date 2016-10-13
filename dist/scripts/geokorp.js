@@ -147,14 +147,14 @@
         scope.selectedMarkers = [];
         stamenWaterColor = L.tileLayer.provider("Stamen.Watercolor");
         openStreetMap = L.tileLayer.provider("OpenStreetMap");
-        createCircleMarker = function(color, diameter) {
+        createCircleMarker = function(color, diameter, borderRadius) {
           return L.divIcon({
-            html: '<div class="geokorp-marker" style="border-radius:' + diameter + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>',
+            html: '<div class="geokorp-marker" style="border-radius:' + borderRadius + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>',
             iconSize: new L.Point(diameter, diameter)
           });
         };
-        createMarkerIcon = function(color) {
-          return createCircleMarker(color, 10);
+        createMarkerIcon = function(color, cluster) {
+          return createCircleMarker(color, 10, cluster ? 1 : 5);
         };
         createMultiMarkerIcon = function(markerData) {
           var center, color, diameter, elements, grid, gridSize, id, idx, marker, neg, row, something, stop, x, xOp, y, yOp, _i, _j, _ref;
@@ -277,7 +277,7 @@
               color = _.keys(sizes)[0];
               groupSize = sizes[color];
               diameter = ((groupSize / scope.maxRel) * 45) + 5;
-              return createCircleMarker(color, diameter);
+              return createCircleMarker(color, diameter, diameter);
             } else {
               elements = "";
               _ref1 = _.keys(sizes);
@@ -538,7 +538,7 @@
                 markerData = markerGroup.markers[marker_id];
                 markerData.color = color;
                 marker = L.marker([markerData.lat, markerData.lng], {
-                  icon: createMarkerIcon(color)
+                  icon: createMarkerIcon(color, !scope.oldMap && selectedGroups.length !== 1)
                 });
                 marker.markerData = markerData;
                 if (scope.useClustering) {
