@@ -549,6 +549,15 @@
               }
             }
           } else {
+            markers = (function() {
+              var _l, _len3, _results;
+              _results = [];
+              for (_l = 0, _len3 = selectedGroups.length; _l < _len3; _l++) {
+                markerGroupId = selectedGroups[_l];
+                _results.push(markers[markerGroupId]);
+              }
+              return _results;
+            })();
             _ref1 = mergeMarkers(_.values(markers));
             for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
               markerData = _ref1[_l];

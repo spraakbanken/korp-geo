@@ -423,7 +423,8 @@ angular.module 'sbMap', [
                       else
                           scope.featureLayer.addLayer marker
           else
-              # TOOD markers need to be updated to only selected
+              markers = for markerGroupId in selectedGroups
+                  markers[markerGroupId]
               for markerData in mergeMarkers _.values markers
                   marker = L.marker [markerData.lat, markerData.lng], {icon: createMultiMarkerIcon markerData.markerData}
                   marker.markerData = markerData.markerData
