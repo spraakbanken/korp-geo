@@ -136,6 +136,7 @@
       link = function(scope, element, attrs) {
         var baseLayers, createCircleMarker, createClusterIcon, createFeatureLayer, createMarkerCluster, createMarkerIcon, createMultiMarkerIcon, map, mergeMarkers, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, stamenWaterColor, updateMarkerSizes, updateMarkers;
         scope.useClustering = angular.isDefined(scope.useClustering) ? scope.useClustering : true;
+        scope.oldMap = angular.isDefined(scope.oldMap) ? scope.oldMap : false;
         scope.showMap = false;
         scope.hoverTemplate = "<div class=\"hover-info\">\n   <div ng-if=\"showLabel\" class=\"swatch\" style=\"background-color: {{color}}\"></div><div ng-if=\"showLabel\" style=\"display: inline; font-weight: bold; font-size: 15px\">{{label}}</div>\n   <div><span>{{ 'map_name' | loc }}: </span> <span>{{point.name}}</span></div>\n   <div><span>{{ 'map_abs_occurrences' | loc }}: </span> <span>{{point.abs}}</span></div>\n   <div><span>{{ 'map_rel_occurrences' | loc }}: </span> <span>{{point.rel | number:2}}</span></div>\n</div>";
         map = angular.element(element.find(".map-container"));
@@ -152,7 +153,7 @@
             iconSize: new L.Point(diameter, diameter)
           });
         };
-        createMarkerIcon = function(color, relSize) {
+        createMarkerIcon = function(color) {
           return createCircleMarker(color, 10);
         };
         createMultiMarkerIcon = function(markerData) {
@@ -501,7 +502,7 @@
           }
         });
         updateMarkers = function() {
-          var clusterGroups, color, group, groupData, marker, markerData, markerGroup, markerGroupId, marker_id, markers, oldMap, selectedGroups, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+          var clusterGroups, color, group, groupData, marker, markerData, markerGroup, markerGroupId, marker_id, markers, selectedGroups, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
           selectedGroups = scope.selectedGroups;
           markers = scope.markers;
           if (scope.markerCluster) {
@@ -525,8 +526,7 @@
             scope.featureLayer = createFeatureLayer();
             scope.map.addLayer(scope.featureLayer);
           }
-          oldMap = false;
-          if (scope.useClustering || oldMap) {
+          if (scope.useClustering || scope.oldMap) {
             for (_j = 0, _len1 = selectedGroups.length; _j < _len1; _j++) {
               markerGroupId = selectedGroups[_j];
               markerGroup = markers[markerGroupId];
@@ -538,7 +538,7 @@
                 markerData = markerGroup.markers[marker_id];
                 markerData.color = color;
                 marker = L.marker([markerData.lat, markerData.lng], {
-                  icon: createMarkerIcon(color, markerData.point.rel)
+                  icon: createMarkerIcon(color)
                 });
                 marker.markerData = markerData;
                 if (scope.useClustering) {
@@ -611,7 +611,8 @@
           markerCallback: '=sbMarkerCallback',
           selectedGroups: '=sbSelectedGroups',
           useClustering: '=?sbUseClustering',
-          restColor: '=?sbRestColor'
+          restColor: '=?sbRestColor',
+          oldMap: '=?sbOldMap'
         },
         link: link,
         templateUrl: 'template/sb_map.html'

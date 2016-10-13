@@ -102,6 +102,7 @@ angular.module 'sbMap', [
   .directive  'sbMap', ['$compile', '$timeout', '$rootScope', ($compile, $timeout, $rootScope) ->
     link = (scope, element, attrs) ->
       scope.useClustering = if angular.isDefined(scope.useClustering) then scope.useClustering else true
+      scope.oldMap = if angular.isDefined(scope.oldMap) then scope.oldMap else false
         
       scope.showMap = false
       
@@ -124,7 +125,7 @@ angular.module 'sbMap', [
               html: '<div class="geokorp-marker" style="border-radius:' + diameter + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>'
               iconSize: new L.Point diameter, diameter
 
-      createMarkerIcon = (color, relSize) ->
+      createMarkerIcon = (color) ->
         # TODO use scope.maxRel, but scope.maxRel is not set when markers are created
         # diameter = ((relSize / scope.maxRel) * 45) + 5
         return createCircleMarker color, 10
@@ -406,8 +407,7 @@ angular.module 'sbMap', [
               scope.featureLayer = createFeatureLayer()
               scope.map.addLayer scope.featureLayer
 
-          oldMap = false # TODO use real value
-          if scope.useClustering or oldMap
+          if scope.useClustering or scope.oldMap
               for markerGroupId in selectedGroups
                   markerGroup = markers[markerGroupId]
                   color = markerGroup.color
@@ -415,7 +415,7 @@ angular.module 'sbMap', [
                   for marker_id in _.keys markerGroup.markers
                       markerData = markerGroup.markers[marker_id]
                       markerData.color = color
-                      marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color, markerData.point.rel}
+                      marker = L.marker [markerData.lat, markerData.lng], {icon: createMarkerIcon color}
                       marker.markerData = markerData
 
                       if scope.useClustering
@@ -475,6 +475,7 @@ angular.module 'sbMap', [
         selectedGroups: '=sbSelectedGroups'
         useClustering: '=?sbUseClustering'
         restColor: '=?sbRestColor' # free color to use for grouping etc
+        oldMap: '=?sbOldMap'
       },
       link: link,
       templateUrl: 'template/sb_map.html'
