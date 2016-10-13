@@ -157,7 +157,7 @@
           return createCircleMarker(color, 10, cluster ? 1 : 5);
         };
         createMultiMarkerIcon = function(markerData) {
-          var center, color, diameter, elements, grid, gridSize, id, idx, marker, neg, row, something, stop, x, xOp, y, yOp, _i, _j, _ref;
+          var center, circle, color, diameter, elements, grid, gridSize, height, id, idx, marker, markerClass, neg, row, something, stop, width, x, xOp, y, yOp, _i, _j;
           elements = (function() {
             var _i, _len, _results;
             _results = [];
@@ -176,18 +176,10 @@
           gridSize = gridSize % 2 === 0 ? gridSize + 1 : gridSize;
           center = Math.floor(gridSize / 2);
           grid = (function() {
-            var _i, _results;
+            var _i, _ref, _results;
             _results = [];
-            for (x = _i = 0; 0 <= gridSize ? _i <= gridSize : _i >= gridSize; x = 0 <= gridSize ? ++_i : --_i) {
-              row = (function() {
-                var _j, _results1;
-                _results1 = [];
-                for (y = _j = 0; 0 <= gridSize ? _j <= gridSize : _j >= gridSize; y = 0 <= gridSize ? ++_j : --_j) {
-                  _results1.push([]);
-                }
-                return _results1;
-              })();
-              _results.push(row);
+            for (x = _i = 0, _ref = gridSize - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; x = 0 <= _ref ? ++_i : --_i) {
+              _results.push([]);
             }
             return _results;
           })();
@@ -226,24 +218,58 @@
               if (y === center + idx) {
                 yOp = neg;
               }
-              grid[x][y] = (_ref = elements.pop()) != null ? _ref[1] : void 0;
+              circle = elements.pop();
+              if (circle) {
+                grid[y][x] = circle;
+              } else {
+                break;
+              }
             }
           }
+          grid = _.filter(grid, function(row) {
+            return row.length > 0;
+          });
+          grid = _.map(grid, function(row) {
+            return row = _.filter(row, function(elem) {
+              return elem;
+            });
+          });
+          height = 0;
+          width = 0;
+          center = Math.floor(grid.length / 2);
           grid = (function() {
             var _k, _len, _results;
             _results = [];
-            for (_k = 0, _len = grid.length; _k < _len; _k++) {
-              row = grid[_k];
-              row = _.filter(row, function(elem) {
-                return elem;
-              });
-              _results.push('<div style="text-align: center;">' + row.join('') + '</div>');
+            for (idx = _k = 0, _len = grid.length; _k < _len; idx = ++_k) {
+              row = grid[idx];
+              height = height + _.reduce(row, (function(memo, val) {
+                if (val[0] > memo) {
+                  return val[0];
+                } else {
+                  return memo;
+                }
+              }), 0);
+              if (idx < center) {
+                markerClass = 'marker-bottom';
+              }
+              if (idx === center) {
+                width = _.reduce(grid[center], (function(memo, val) {
+                  return memo + val[0];
+                }), 0);
+                markerClass = 'marker-middle';
+              }
+              if (idx > center) {
+                markerClass = 'marker-top';
+              }
+              _results.push('<div class="' + markerClass + '" style="text-align: center;line-height: 0;">' + _.map(row, function(elem) {
+                return elem[1];
+              }).join('') + '</div>');
             }
             return _results;
           })();
           return L.divIcon({
             html: grid.join(''),
-            iconSize: new L.Point(50, 50)
+            iconSize: new L.Point(width, height)
           });
         };
         createClusterIcon = function(clusterGroups, restColor) {

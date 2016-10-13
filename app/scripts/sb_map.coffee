@@ -142,10 +142,8 @@ angular.module 'sbMap', [
         gridSize = if gridSize % 2 == 0 then gridSize + 1 else gridSize
         center = Math.floor gridSize / 2
 
-        grid = for x in [0..gridSize]
-            row = for y in [0..gridSize]
-                []
-            row
+        grid = for x in [0..gridSize-1]
+            []
 
         id = (x) -> x
         neg = (x) -> -x
@@ -175,14 +173,36 @@ angular.module 'sbMap', [
                     xOp = neg
                 if y == center + idx
                     yOp = neg
-                
-                grid[x][y] = elements.pop()?[1]
 
-        grid = for row in grid
+                circle = elements.pop()
+                if circle
+                    grid[y][x] = circle
+                else
+                    break
+
+        # remove all empty arrays and elements
+        # TODO don't create empty stuff??
+        grid = _.filter grid, (row) -> row.length > 0
+        grid = _.map grid, (row) ->
             row = _.filter row, (elem) -> elem
-            '<div style="text-align: center;">' + row.join('') + '</div>'
 
-        return L.divIcon html: grid.join(''), iconSize: new L.Point 50, 50
+        ## take largest element from each row and add to height
+        height = 0
+        width = 0
+        center = Math.floor grid.length / 2
+        grid = for row,idx in grid
+            height = height + _.reduce(row, ((memo, val) -> if val[0] > memo then val[0] else memo), 0)
+            if idx < center
+                markerClass = 'marker-bottom'
+            if idx == center
+                width = _.reduce(grid[center], ((memo, val) -> memo + val[0]), 0)
+                markerClass = 'marker-middle'
+            if idx > center
+                markerClass = 'marker-top'
+            
+            '<div class="' + markerClass + '" style="text-align: center;line-height: 0;">' + _.map(row, (elem) -> elem[1]).join('') + '</div>'
+
+        return L.divIcon html: grid.join(''), iconSize: new L.Point width, height
 
       # use the previously calculated "scope.maxRel" to decide the sizes of the bars
       # in the cluster icon that is returned (between 5px and 50px)

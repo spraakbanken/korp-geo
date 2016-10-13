@@ -21,6 +21,18 @@ sb-map {
     display: inline-block;
   }
 
+  .marker-top .geokorp-multi-marker {
+      vertical-align: top;
+  }
+
+  .marker-middle .geokorp-multi-marker {
+      vertical-align: middle;
+  }
+  
+  .marker-bottom .geokorp-multi-marker {
+      vertical-align: bottom;
+  }
+
   .geokorp-multi-marker {
       opacity: 0.85;
       display: inline-block;
