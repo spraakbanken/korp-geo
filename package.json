@@ -1,6 +1,6 @@
 {
   "name": "geokorp",
-  "version": "1.2.2",
+  "version": "1.2.6",
   "dependencies": {
       "angular": "1.6.x",
       "bootstrap-sass-official": "^3.2.0",
