@@ -3,7 +3,6 @@
   "version": "1.2.7",
   "dependencies": {
       "angular": "1.6.x",
-      "bootstrap-sass-official": "twbs/bootstrap-sass#~3.2.0",
       "leaflet": "~1.0.0",
       "leaflet-providers": "~1.1.1",
       "lodash": "~1.2",
