@@ -1,6 +1,6 @@
 {
   "name": "geokorp",
-  "version": "1.2.7",
+  "version": "1.2.10",
   "dependencies": {
       "angular": "1.6.x",
       "leaflet": "~1.0.0",
