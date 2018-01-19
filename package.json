@@ -5,7 +5,7 @@
       "angular": "1.6.x",
       "leaflet": "~1.0.0",
       "leaflet-providers": "~1.1.1",
-      "lodash": "~1.2",
+      "lodash": "~4.17.4",
       "moment": "~2.0.0",
       "leaflet.markercluster": "1.0.0-rc.1.0"
   },
