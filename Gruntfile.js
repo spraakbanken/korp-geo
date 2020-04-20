@@ -24,10 +24,6 @@ module.exports = function (grunt) {
         files: ['<%= geokorp.app %>/scripts/{,*/}*.{coffee,litcoffee,coffee.md}'],
         tasks: ['newer:coffee:dist']
       },
-      compass: {
-        files: ['<%= geokorp.app %>/styles/{,*/}*.{scss,sass}'],
-        tasks: ['compass:server', 'autoprefixer']
-      },
       gruntfile: {
         files: ['Gruntfile.js']
       }
@@ -99,35 +95,6 @@ module.exports = function (grunt) {
       }
     },
 
-    // Compiles Sass to CSS and generates necessary files if requested
-    compass: {
-      options: {
-        sassDir: '<%= geokorp.app %>/styles',
-        cssDir: '<%= geokorp.dist %>/styles',
-        generatedImagesDir: '<%= geokorp.dist %>/images/generated',
-        imagesDir: '<%= geokorp.app %>/images',
-        javascriptsDir: '<%= geokorp.app %>/scripts',
-        fontsDir: '<%= geokorp.app %>/styles/fonts',
-        // importPath: './bower_components',
-        httpImagesPath: '/images',
-        httpGeneratedImagesPath: '/images/generated',
-        httpFontsPath: '/styles/fonts',
-        relativeAssets: false,
-        assetCacheBuster: false,
-        raw: 'Sass::Script::Number.precision = 10\n'
-      },
-      dist: {
-        options: {
-          generatedImagesDir: '<%= geokorp.dist %>/images/generated'
-        }
-      },
-      server: {
-        options: {
-          // sourcemap: true
-        }
-      }
-    },
-
     // Copies remaining files to places other tasks can use
     copy: {
       dist: {
@@ -139,7 +106,8 @@ module.exports = function (grunt) {
           src: [
             'templates/{,*/}*.*',
             'data/places.json',
-            'data/name_mapping.json'
+            'data/name_mapping.json',
+            'styles/geokorp.css'
           ]
         }, {
           expand: true,
@@ -172,12 +140,10 @@ module.exports = function (grunt) {
     // Run some tasks in parallel to speed up the build process
     concurrent: {
       server: [
-        'coffee:dist',
-        'compass:server'
+        'coffee:dist'
       ],
       dist: [
-        'coffee',
-        'compass:dist'
+        'coffee'
       ]
     },
     html2js: {
