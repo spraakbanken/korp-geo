@@ -1,7 +1,6 @@
 (function() {
   'use strict';
-  var c,
-    __hasProp = {}.hasOwnProperty;
+  var c;
 
   c = console;
 
@@ -9,132 +8,7 @@
     return function(input) {
       return $sce.trustAsHtml(input);
     };
-  }).factory('places', [
-    '$q', '$http', function($q, $http) {
-      var Places;
-      Places = (function() {
-        function Places() {
-          this.places = null;
-        }
-
-        Places.prototype.getLocationData = function() {
-          var def;
-          def = $q.defer();
-          if (!this.places) {
-            $http.get('components/geokorp/dist/data/places.json').then((function(_this) {
-              return function(response) {
-                _this.places = {
-                  data: response.data
-                };
-                return def.resolve(_this.places);
-              };
-            })(this))["catch"]((function(_this) {
-              return function() {
-                def.reject();
-                return c.log("failed to get place data for sb map");
-              };
-            })(this));
-          } else {
-            def.resolve(this.places);
-          }
-          return def.promise;
-        };
-
-        return Places;
-
-      })();
-      return new Places();
-    }
-  ]).factory('nameMapper', [
-    '$q', '$http', function($q, $http) {
-      var NameMapper;
-      NameMapper = (function() {
-        function NameMapper() {
-          this.mapper = null;
-        }
-
-        NameMapper.prototype.getNameMapper = function() {
-          var def;
-          def = $q.defer();
-          if (!this.mapper) {
-            $http.get('components/geokorp/dist/data/name_mapping.json').then(function(response) {
-              return def.resolve({
-                data: response.data
-              });
-            })["catch"](function() {
-              c.log("failed to get name mapper for sb map");
-              return def.reject();
-            });
-          } else {
-            def.resolve(this.mapper);
-          }
-          return def.promise;
-        };
-
-        return NameMapper;
-
-      })();
-      return new NameMapper();
-    }
-  ]).factory('markers', [
-    '$rootScope', '$q', '$http', 'places', 'nameMapper', function($rootScope, $q, $http, places, nameMapper) {
-      var icon;
-      icon = {
-        type: 'div',
-        iconSize: [5, 5],
-        html: '<span class="dot"></span>',
-        popupAnchor: [0, 0]
-      };
-      return function(nameData) {
-        var deferred;
-        deferred = $q.defer();
-        $q.all([places.getLocationData(), nameMapper.getNameMapper()]).then(function(_arg) {
-          var locs, mappedLocations, mappedName, markers, name, nameLow, nameMapperResponse, names, placeResponse, usedNames, _fn, _i, _len;
-          placeResponse = _arg[0], nameMapperResponse = _arg[1];
-          names = _.keys(nameData);
-          usedNames = [];
-          markers = {};
-          mappedLocations = {};
-          for (_i = 0, _len = names.length; _i < _len; _i++) {
-            name = names[_i];
-            mappedName = null;
-            nameLow = name.toLowerCase();
-            if (nameMapperResponse.data.hasOwnProperty(nameLow)) {
-              mappedName = nameMapperResponse.data[nameLow];
-            } else if (placeResponse.data.hasOwnProperty(nameLow)) {
-              mappedName = nameLow;
-            }
-            if (mappedName) {
-              locs = mappedLocations[mappedName];
-              if (!locs) {
-                locs = {};
-              }
-              locs[name] = nameData[name];
-              mappedLocations[mappedName] = locs;
-            }
-          }
-          _fn = function(name, locs) {
-            var id, lat, lng, _ref;
-            _ref = placeResponse.data[name], lat = _ref[0], lng = _ref[1];
-            id = name.replace(/-/g, "");
-            return markers[id] = {
-              icon: icon,
-              lat: lat,
-              lng: lng,
-              names: locs
-            };
-          };
-          for (name in mappedLocations) {
-            if (!__hasProp.call(mappedLocations, name)) continue;
-            locs = mappedLocations[name];
-            _fn(name, locs);
-          }
-          return deferred.resolve(markers);
-        });
-        return deferred.promise;
-      };
-    }
-  ]).directive('sbMap', [
+  }).directive('sbMap', [
     '$compile', '$timeout', '$rootScope', function($compile, $timeout, $rootScope) {
       var link;
       link = function(scope, element, attrs) {
