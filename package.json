@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "coffee-script": "*",
-    "grunt": "^0.4.5",
+    "grunt": "^1.3.0",
     "grunt-autoprefixer": "^2.0.0",
     "grunt-cli": "^0.1.13",
     "grunt-concurrent": "^1.0.0",
