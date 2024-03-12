@@ -1,14 +1,12 @@
 {
   "name": "geokorp",
   "version": "1.4.2",
-  "dependencies": {
-    
-  },
+  "dependencies": {},
   "peerDependencies": {
     "leaflet": "^1.6.0",
     "leaflet-providers": "^1.9.1",
     "leaflet.markercluster": "^1.4.1",
-    "angular": "~1.7.0",
+    "angular": "^1.7.0",
     "lodash": "^4.17.12",
     "moment": "^2.20.0"
   },

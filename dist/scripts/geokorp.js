@@ -12,7 +12,7 @@
     '$compile', '$timeout', '$rootScope', function($compile, $timeout, $rootScope) {
       var link;
       link = function(scope, element, attrs) {
-        var baseLayers, createCircleMarker, createClusterIcon, createFeatureLayer, createMarkerCluster, createMarkerIcon, createMultiMarkerIcon, map, mergeMarkers, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, stamenWaterColor, updateMarkerSizes, updateMarkers;
+        var createCircleMarker, createClusterIcon, createFeatureLayer, createMarkerCluster, createMarkerIcon, createMultiMarkerIcon, map, mergeMarkers, mouseOut, mouseOver, openStreetMap, shouldZooomToBounds, updateMarkerSizes, updateMarkers;
         scope.useClustering = angular.isDefined(scope.useClustering) ? scope.useClustering : true;
         scope.oldMap = angular.isDefined(scope.oldMap) ? scope.oldMap : false;
         scope.showMap = false;
@@ -28,8 +28,6 @@
             return scope.map.invalidateSize();
           }), 0);
         });
-        stamenWaterColor = L.tileLayer.provider("Stamen.Watercolor");
-        openStreetMap = L.tileLayer.provider("OpenStreetMap");
         createCircleMarker = function(color, diameter, borderRadius) {
           return L.divIcon({
             html: '<div class="geokorp-marker" style="border-radius:' + borderRadius + 'px;height:' + diameter + 'px;background-color:' + color + '"></div>',
@@ -508,18 +506,8 @@
           }), {});
           return _.values(val);
         };
-        if (scope.baseLayer === "Stamen Watercolor") {
-          stamenWaterColor.addTo(scope.map);
-        } else {
-          openStreetMap.addTo(scope.map);
-        }
-        baseLayers = {
-          "Stamen Watercolor": stamenWaterColor,
-          "OpenStreetMap": openStreetMap
-        };
-        L.control.layers(baseLayers, null, {
-          position: "bottomleft"
-        }).addTo(scope.map);
+        openStreetMap = L.tileLayer.provider("OpenStreetMap");
+        openStreetMap.addTo(scope.map);
         scope.map.setView([scope.center.lat, scope.center.lng], scope.center.zoom);
         return scope.showMap = true;
       };
